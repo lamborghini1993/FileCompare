@@ -34,6 +34,7 @@ class CCodeCmpWidget(QtWidgets.QWidget):
         super(CCodeCmpWidget, self).__init__(*args)
         self.m_LeftSrc = ""
         self.m_RightSrc = ""
+        self.m_CmpResult = {}
         self.m_HLayout = QtWidgets.QHBoxLayout(self)
         self.m_LCodeWidget = CCodeEdit()
         self.m_RCodeWidget = CCodeEdit()
@@ -44,63 +45,63 @@ class CCodeCmpWidget(QtWidgets.QWidget):
         self.m_HLayout.addWidget(self.m_Splitter)
         self.show()
 
-    def Refersh(self, file1, file2):
-        with open(file1, "r") as fp:
-            self.m_Str1 = fp.read()
-        with open(file2, "r") as fp:
-            self.m_Str2 = fp.read()
-        self.CompareByStr(self.m_Str1, self.m_Str2)
+    def Refersh(self, leftFile, rightFile):
+        with open(leftFile, "r") as fp:
+            self.m_LeftSrc = fp.read()
+        with open(rightFile, "r") as fp:
+            self.m_RightSrc = fp.read()
+        self.m_CmpResult = {}
+        self.CompareByStr()
 
-        # self.m_LCodeWidget
-    def CompareByStr(self, str1, str2):
+    def CompareByStr(self):
         differ = difflib.Differ()
-        diff = differ.compare(self.m_Str1.splitlines(),
-                              self.m_Str2.splitlines())
+        diff = differ.compare(self.m_LeftSrc.splitlines(),
+                              self.m_RightSrc.splitlines())
         lstDiff = list(diff)
-
-        lstResult = []
-        dInfo = {}
+        dResult = self.m_CmpResult
         iLNum = iRight = 1
-        bSave = True
+        iLRealNum = iRRealNum = 1
         i = 0
         while i < len(lstDiff):
             prefix = lstDiff[i][:2]
             text = lstDiff[i][2:]
 
-            if(bSave and dInfo):
-                lstResult.append(copy.deepcopy(dInfo))
-                dInfo = {}
-
             if prefix == "- ":
-                dInfo["lNum"] = iLNum
-                dInfo["lLine"] = text
-                iLNum += 1
+                dInfo = dResult.setdefault(iLRealNum, {})
                 if(i+1 < len(lstDiff) and lstDiff[i+1].startswith("? ")):
+                    iLRealNum = iRRealNum = max(iLRealNum, iRRealNum)
+                    dInfo = dResult.setdefault(iLRealNum, {})
                     tmp = lstDiff[i+1][2:]
                     dInfo["ldiff"] = [t.start()
                                       for t in re.finditer("\^", tmp)]
                     i += 1
-                    bSave = False
+                dInfo["lNum"] = iLNum
+                dInfo["lLine"] = text
+                iLNum += 1
+                iLRealNum += 1
 
             elif prefix == "+ ":
+                dInfo = dResult.setdefault(iRRealNum, {})
                 dInfo["rNum"] = iRight
                 dInfo["rLine"] = text
                 iRight += 1
+                iRRealNum += 1
                 if(i+1 < len(lstDiff) and lstDiff[i+1].startswith("? ")):
                     tmp = lstDiff[i+1][2:]
                     dInfo["rdiff"] = [t.start()
                                       for t in re.finditer("\^", tmp)]
                     i += 1
-                    bSave = True
 
             elif prefix == "  ":
+                iLRealNum = iRRealNum = max(iLRealNum, iRRealNum)
+                dInfo = dResult.setdefault(iRRealNum, {})
                 dInfo["lNum"] = iLNum
                 dInfo["lLine"] = text
                 dInfo["rNum"] = iRight
                 dInfo["rLine"] = text
+                iLRealNum += 1
+                iRRealNum += 1
                 iLNum += 1
                 iRight += 1
 
             i += 1
-
-        lstResult.append(copy.deepcopy(dInfo))
