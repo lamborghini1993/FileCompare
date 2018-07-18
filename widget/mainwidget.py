@@ -18,7 +18,6 @@ class CMainWidget(QtWidgets.QMainWindow):
         super(CMainWidget, self).__init__(parent)
         self.resize(1500, 800)
         self.InitUI()
-        # self.InitConnect()
 
     def InitUI(self):
         self.m_Splitter = QtWidgets.QSplitter(self)
@@ -33,14 +32,6 @@ class CMainWidget(QtWidgets.QMainWindow):
         self.setCentralWidget(self.m_Splitter)
         self.m_Splitter.setStretchFactor(0, 3)
         self.m_Splitter.setStretchFactor(1, 8)
-
-    # def InitConnect(self):
-    #     self.pushButton_ChooseDir.clicked.connect(self.ChooseDir)
-    #     self.treeView.SIGNAL_CURRENT_CHANGED.connect(self.SelectFileChanged)
-
-    # def SelectFileChanged(self, curIndex, preIndex):
-    #     path = self.treeView.model().filePath(curIndex)
-    #     print("SelectFileChanged:", path, self.treeView.model())
 
 
 def Show():
