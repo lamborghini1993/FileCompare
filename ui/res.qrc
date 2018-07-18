@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="app">
+        <file>plus.png</file>
+        <file>minus.png</file>
+        <file>modify.png</file>
+    </qresource>
+</RCC>

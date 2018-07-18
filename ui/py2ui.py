@@ -15,9 +15,13 @@ for sDir, lstDir, lstFile in os.walk(os.getcwd()):
     if IsIgnore(sDir):
         continue
     for sFile in lstFile:
-        if not sFile.endswith(".ui"):
-            continue
-        sUIFile = os.path.join(sDir, sFile)
-        sPYFile = sUIFile[:-3] + "_ui.py"
-        os.system("pyuic5 -o %s %s" % (sPYFile, sUIFile))
-        print("%s   ->    %s" %(sUIFile, sPYFile))
+        if sFile.endswith(".ui"):
+            sUIFile = os.path.join(sDir, sFile)
+            sPYFile = sUIFile[:-3] + "_ui.py"
+            os.system("pyuic5 -o %s %s" % (sPYFile, sUIFile))
+            print("%s   ->    %s" %(sUIFile, sPYFile))
+        if sFile.endswith(".qrc"):
+            sQrcFile = os.path.join(sDir, sFile)
+            sPYFile = sQrcFile[:-4] + "_rc.py"
+            os.system("pyrcc5 -o %s %s" % (sPYFile, sQrcFile))
+            print("%s   ->    %s" %(sQrcFile, sPYFile))
