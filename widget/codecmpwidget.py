@@ -10,9 +10,9 @@ import difflib
 import re
 import copy
 import enum
+import time
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-from . import codewidget
 
 file1 = r"E:\mygithub\FileCompare\test\py2ui.py"
 file2 = r"E:\mygithub\FileCompare\test\py2ui2.py"
@@ -43,11 +43,89 @@ class LINEACT(enum.Enum):
     NONE = None
 
 
+def GetLinePixMap(png):
+    if png:
+        bgPix = QtGui.QPixmap(":/app/%s.png" % png)
+    else:
+        bgPix = None
+    return bgPix
+
+
+class CScrollBar(QtWidgets.QScrollBar):
+    """可以指定显示文本位置的纵向滚动条"""
+
+    m_MinBlockHeight = 8
+
+    def __init__(self, parent):
+        # super(CScrollBar, self).__init__(parent)
+        super(CScrollBar, self).__init__(QtCore.Qt.Vertical, parent)
+        self.m_BlockBgDict = {}
+        self.m_Parent = weakref.ref(parent)
+
+    def SetBlockBgInfo(self, dBlkBgInfo):
+        self.m_BlockBgDict = dBlkBgInfo
+        self.update()
+
+    def paintEvent(self, pe):
+        """绘画事件"""
+        super(CScrollBar, self).paintEvent(pe)
+        painter = QtGui.QPainter(self)
+        parent = self.m_Parent()
+        dh = parent.blockCount()
+        sh = self.height() - self.width() * 2
+        fSingleH = sh / dh
+        fBlkHeight = max(self.m_MinBlockHeight, fSingleH)
+        w = self.width() - 8
+        for iBlock, bgColor in self.m_BlockBgDict.items():
+            x = 4
+            y = fSingleH * iBlock + self.width()
+            rect = QtCore.QRectF(x, y, w, fBlkHeight)
+            painter.fillRect(rect, bgColor)
+
+
+class CLineNumArea(QtWidgets.QWidget):
+    def __init__(self, parent):
+        super(CLineNumArea, self).__init__(parent)
+        self.m_Parent = weakref.ref(parent)
+
+    def sizeHint(self):
+        super(CLineNumArea, self).sizeHint()
+        qSize = QtCore.QSize(self.m_Parent().LineNumAreaWidth(), 0)
+        return qSize
+
+    def paintEvent(self, pe):
+        super(CLineNumArea, self).paintEvent(pe)
+        self.m_Parent().LineNumAreaPaintEvent(pe)
+
+
 class CCodeEdit(QtWidgets.QPlainTextEdit):
     def __init__(self, *args):
         super(CCodeEdit, self).__init__(*args)
         self.m_BindEditor = None
-        self.m_LineInfo = {}    # 真实行号:(原来行号,每行的颜色,行首变化行为)
+        self.m_LineNum = 0      # 代码的行数
+        self.m_LineInfo = {}    # 真实行号:(原来行号,行首变化行为)
+        self.m_BlockBgInfo = {}  # 真实行号:每行的颜色
+        self.m_LineNumArea = CLineNumArea(self)
+        self.m_ScrollBar = CScrollBar(self)
+        self.setVerticalScrollBar(self.m_ScrollBar)
+
+        # 设置字体
+        oFont = QtGui.QFont()
+        oFont.setFamily("Consolas")
+        self.setFont(oFont)
+
+        self.setTabStopWidth(self.fontMetrics().width("_") * 4)
+        self.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
+        self.setReadOnly(True)
+        # self.UpdateLineNumAreaWidth(0)
+        self.SetShowTabAndSpaces(True)
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+
+    def resizeEvent(self, re):
+        super(CCodeEdit, self).resizeEvent(re)
+        qRect = self.contentsRect()
+        cr1 = QtCore.QRect(qRect.left(), qRect.top(), self.LineNumAreaWidth(), qRect.height())
+        self.m_LineNumArea.setGeometry(cr1)
 
     def BindBroEditor(self, oEditor):
         if self.m_BindEditor:
@@ -57,10 +135,73 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
 
     def AddLineInfo(self, realNum, showNum, lineColor, lineAct):
         showNum = str(showNum)
-        self.m_LineInfo[realNum] = (showNum, lineColor, lineAct)
+        self.m_LineInfo[realNum] = (showNum, lineAct.value)
+        self.m_BlockBgInfo[realNum] = lineColor.value
 
     def Load(self, text):
         self.setPlainText(text)
+        self.ProcessBlkBg()
+        self.m_ScrollBar.SetBlockBgInfo(self.m_BlockBgInfo)
+
+    def ProcessBlkBg(self):
+        doc = self.document()
+        oCursor = QtGui.QTextCursor(doc)
+        for iLine, bgColor in self.m_BlockBgInfo.items():
+            blk = doc.findBlockByLineNumber(iLine - 1)  # 下标从0开始
+            oCursor.setPosition(blk.position())
+            oCursor.beginEditBlock()
+            oCursor.select(QtGui.QTextCursor.LineUnderCursor)
+            fmt = QtGui.QTextBlockFormat()
+            fmt.setBackground(bgColor)
+            oCursor.mergeBlockFormat(fmt)
+            oCursor.clearSelection()
+            oCursor.endEditBlock()
+
+    def SetShowTabAndSpaces(self, bShow):
+        doc = self.document()
+        op = doc.defaultTextOption()
+        if bShow:
+            op.setFlags(op.flags() | QtGui.QTextOption.ShowTabsAndSpaces)
+        else:
+            op.setFlags(op.flags() | ~QtGui.QTextOption.ShowTabsAndSpaces)
+            op.setFlags(op.flags() | QtGui.QTextOption.AddSpaceForLineAndParagraphSeparators)
+        doc.setDefaultTextOption(op)
+
+    def LineNumAreaWidth(self):
+        """获取宽度"""
+        iDigits = 0
+        iMax = max(1, self.blockCount())
+        while iMax:
+            iMax //= 10
+            iDigits += 1
+        iWidth = self.fontMetrics().width("9") * (iDigits + 3)
+        return iWidth
+
+    def LineNumAreaPaintEvent(self, pe):
+        """更新行号的显示，处理空白行号"""
+        qPainter = QtGui.QPainter(self.m_LineNumArea)
+        qPainter.fillRect(pe.rect(), QtCore.Qt.darkGray)
+        qBlock = self.firstVisibleBlock()
+        iBlockNum = qBlock.blockNumber()
+        iTop = int(self.blockBoundingGeometry(qBlock).translated(self.contentOffset()).top())
+        iBottom = iTop + int(self.blockBoundingRect(qBlock).height())
+
+        while(qBlock.isValid() and iTop <= pe.rect().bottom()):
+            if qBlock.isVisible() and iBottom >= pe.rect().top():
+                sNum = str(iBlockNum + 1)   # 真实的行号
+                sTextNum, sPngAct = self.m_LineInfo.get(iBlockNum + 1, (sNum, None))
+                qPainter.setPen(QtCore.Qt.black)
+                iFontHeight = self.fontMetrics().height()
+                iFontWidth = self.fontMetrics().width("9")
+                qPainter.drawText(0, iTop, self.m_LineNumArea.width() - iFontWidth * 3, iFontHeight, QtCore.Qt.AlignCenter, sTextNum)
+                if sPngAct:
+                    oPngAct = GetLinePixMap(sPngAct)
+                    oPngAct = oPngAct.scaled(iFontHeight, iFontHeight)
+                    qPainter.drawPixmap(self.m_LineNumArea.width() - iFontWidth * 3, iTop, iFontHeight, iFontHeight, oPngAct)
+            qBlock = qBlock.next()
+            iTop = iBottom
+            iBottom = iTop + int(self.blockBoundingRect(qBlock).height())
+            iBlockNum += 1
 
 
 class CCodeCmpWidget(QtWidgets.QWidget):
@@ -93,8 +234,7 @@ class CCodeCmpWidget(QtWidgets.QWidget):
 
     def CompareByStr(self):
         differ = difflib.Differ()
-        diff = differ.compare(self.m_LeftSrc.splitlines(),
-                              self.m_RightSrc.splitlines())
+        diff = differ.compare(self.m_LeftSrc.splitlines(), self.m_RightSrc.splitlines())
         lstDiff = list(diff)
         dResult = self.m_CmpResult
         iLNum = iRight = 1
@@ -158,7 +298,7 @@ class CCodeCmpWidget(QtWidgets.QWidget):
             else:
                 sRightContent = sRight
 
-            if "ldiff" in dInfo:    # 修改
+            if "ldiff" in dInfo:    # 不一样-小范围个别单词修改
                 self.m_LCodeWidget.AddLineInfo(iRealNum, dInfo.get("lNum", ""), LINECOLOR.LMODIFY, LINEACT.MODIFY)
                 self.m_RCodeWidget.AddLineInfo(iRealNum, dInfo.get("rNum", ""), LINECOLOR.RMODIFY, LINEACT.MODIFY)
 
@@ -167,12 +307,16 @@ class CCodeCmpWidget(QtWidgets.QWidget):
                 self.m_RCodeWidget.AddLineInfo(iRealNum, dInfo.get("rNum", ""), LINECOLOR.DEL, LINEACT.DEL)
 
             elif "lLine" not in dInfo and "rLine" in dInfo:  # 右边添加
-                self.m_LCodeWidget.AddLineInfo(iRealNum, dInfo.get("lNum", ""), LINECOLOR.ADD, LINEACT.DEL)
-                self.m_RCodeWidget.AddLineInfo(iRealNum, dInfo.get("rNum", ""), LINECOLOR.DEL, LINEACT.ADD)
+                self.m_LCodeWidget.AddLineInfo(iRealNum, dInfo.get("lNum", ""), LINECOLOR.DEL, LINEACT.DEL)
+                self.m_RCodeWidget.AddLineInfo(iRealNum, dInfo.get("rNum", ""), LINECOLOR.ADD, LINEACT.ADD)
 
             else:   # 一样
-                self.m_LCodeWidget.AddLineInfo(iRealNum, dInfo.get("lNum", ""), LINECOLOR.EQUAL, LINEACT.NONE)
-                self.m_RCodeWidget.AddLineInfo(iRealNum, dInfo.get("rNum", ""), LINECOLOR.EQUAL, LINEACT.NONE)
+                if(dInfo.get("type", "") == MODIFICATION.EQUAL):
+                    self.m_LCodeWidget.AddLineInfo(iRealNum, dInfo.get("lNum", ""), LINECOLOR.EQUAL, LINEACT.NONE)
+                    self.m_RCodeWidget.AddLineInfo(iRealNum, dInfo.get("rNum", ""), LINECOLOR.EQUAL, LINEACT.NONE)
+                else:   # 不一样-整行修改
+                    self.m_LCodeWidget.AddLineInfo(iRealNum, dInfo.get("lNum", ""), LINECOLOR.LMODIFY, LINEACT.MODIFY)
+                    self.m_RCodeWidget.AddLineInfo(iRealNum, dInfo.get("rNum", ""), LINECOLOR.RMODIFY, LINEACT.MODIFY)
 
         self.m_LCodeWidget.Load(sLeftContent)
         self.m_RCodeWidget.Load(sRightContent)
