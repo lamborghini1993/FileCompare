@@ -212,5 +212,3 @@ class Ui_MainWindow(object):
         self.label.setText(_translate("MainWindow", "起始帧:"))
         self.label_2.setText(_translate("MainWindow", "结束帧:"))
         self.pushButton_compare.setText(_translate("MainWindow", "开始对比"))
-
-import res_rc

@@ -220,7 +220,11 @@
              </widget>
             </item>
             <item>
-             <widget class="QPlainTextEdit" name="plainTextEdit_left"/>
+             <widget class="QPlainTextEdit" name="plainTextEdit_left">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -237,7 +241,11 @@
              </widget>
             </item>
             <item>
-             <widget class="QPlainTextEdit" name="plainTextEdit_right"/>
+             <widget class="QPlainTextEdit" name="plainTextEdit_right">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -246,16 +254,16 @@
        </layout>
       </widget>
       <widget class="QWidget" name="widget_3" native="true">
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="3,2,15,2">
         <item>
          <layout class="QGridLayout" name="gridLayout">
           <item row="0" column="0">
            <widget class="QLabel" name="label">
             <property name="font">
              <font>
-              <pointsize>12</pointsize>
-              <weight>50</weight>
-              <bold>false</bold>
+              <pointsize>14</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
              </font>
             </property>
             <property name="text">
@@ -270,9 +278,9 @@
            <widget class="QLabel" name="label_2">
             <property name="font">
              <font>
-              <pointsize>12</pointsize>
-              <weight>50</weight>
-              <bold>false</bold>
+              <pointsize>14</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
              </font>
             </property>
             <property name="text">
@@ -285,6 +293,13 @@
           </item>
           <item row="0" column="1">
            <widget class="QSpinBox" name="spinBox_start">
+            <property name="font">
+             <font>
+              <pointsize>15</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
             </property>
@@ -292,6 +307,13 @@
           </item>
           <item row="1" column="1">
            <widget class="QSpinBox" name="spinBox_end">
+            <property name="font">
+             <font>
+              <pointsize>15</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
             </property>
@@ -300,7 +322,14 @@
          </layout>
         </item>
         <item>
-         <widget class="QComboBox" name="comboBox"/>
+         <widget class="QComboBox" name="comboBox">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>30</height>
+           </size>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QTableView" name="tableView"/>
