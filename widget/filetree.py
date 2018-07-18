@@ -15,7 +15,6 @@ class CFileTreeWidget(QtWidgets.QWidget, filetree_ui.Ui_Form):
         super(CFileTreeWidget, self).__init__(parent)
         self.setupUi(self)
         self.InitConnect()
-        self.show()
 
     def InitConnect(self):
         self.pushButton_ChooseDir.clicked.connect(self.ChooseDir)

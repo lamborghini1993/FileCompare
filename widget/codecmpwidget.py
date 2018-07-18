@@ -54,7 +54,6 @@ class CScrollBar(QtWidgets.QScrollBar):
     m_MinBlockHeight = 8
 
     def __init__(self, parent):
-        # super(CScrollBar, self).__init__(parent)
         super(CScrollBar, self).__init__(QtCore.Qt.Vertical, parent)
         self.m_BlockBgDict = {}
         self.m_Parent = weakref.ref(parent)
@@ -104,8 +103,11 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_BlockBgInfo = {}  # 真实行号:每行的颜色
         self.m_LineNumArea = CLineNumArea(self)
         self.m_ScrollBar = CScrollBar(self)
-        self.setVerticalScrollBar(self.m_ScrollBar)
+        self.InitUI()
+        self.InitConnect()
 
+    def InitUI(self):
+        self.setVerticalScrollBar(self.m_ScrollBar)
         # 设置字体
         oFont = QtGui.QFont()
         oFont.setFamily("Consolas")
@@ -118,6 +120,10 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.SetShowTabAndSpaces(True)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
 
+    def InitConnect(self):
+        self.blockCountChanged.connect(self.UpdateLineNumAreaWidth)
+        self.updateRequest.connect(self.UpdateLineNumArea)
+
     def resizeEvent(self, re):
         super(CCodeEdit, self).resizeEvent(re)
         qRect = self.contentsRect()
@@ -128,7 +134,14 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         if self.m_BindEditor:
             return
         self.m_BindEditor = weakref.ref(oEditor)
-        # TODO
+        self.verticalScrollBar().valueChanged.connect(self.OnVScrollBarValChanged)
+        self.horizontalScrollBar().valueChanged.connect(self.OnHScrollBarValChanged)
+
+    def OnVScrollBarValChanged(self, iVal):
+        self.m_BindEditor().verticalScrollBar().setValue(iVal)
+
+    def OnHScrollBarValChanged(self, iVal):
+        self.m_BindEditor().horizontalScrollBar().setValue(iVal)
 
     def AddLineInfo(self, realNum, showNum, lineColor, lineAct):
         showNum = str(showNum)
@@ -165,8 +178,16 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
             op.setFlags(op.flags() | QtGui.QTextOption.AddSpaceForLineAndParagraphSeparators)
         doc.setDefaultTextOption(op)
 
-    def UpdateLineNumAreaWidth(self):
+    def UpdateLineNumAreaWidth(self, _):
         self.setViewportMargins(self.LineNumAreaWidth() + 20, 0, 0, 0)
+
+    def UpdateLineNumArea(self, qRect, iDy):
+        if iDy:
+            self.m_LineNumArea.scroll(0, iDy)
+        else:
+            self.m_LineNumArea.update(0, qRect.y(), self.m_LineNumArea.width(), qRect.height())
+        if qRect.contains(self.viewport().rect()):
+            self.UpdateLineNumAreaWidth(0)
 
     def LineNumAreaWidth(self):
         """获取宽度"""
@@ -212,16 +233,22 @@ class CCodeCmpWidget(QtWidgets.QWidget):
         self.m_LeftSrc = ""     # 真实的文本，原文
         self.m_RightSrc = ""
         self.m_CmpResult = {}
-        self.m_HLayout = QtWidgets.QHBoxLayout(self)
         self.m_LCodeWidget = CCodeEdit()
         self.m_RCodeWidget = CCodeEdit()
+        self.Init()
+        self.Connect()
+        self.Refersh(file1, file2)
 
+    def Init(self):
+        self.m_HLayout = QtWidgets.QHBoxLayout(self)
         self.m_Splitter = QtWidgets.QSplitter(self)
         self.m_Splitter.addWidget(self.m_LCodeWidget)
         self.m_Splitter.addWidget(self.m_RCodeWidget)
         self.m_HLayout.addWidget(self.m_Splitter)
-        self.show()
-        self.Refersh(file1, file2)
+
+    def Connect(self):
+        self.m_LCodeWidget.BindBroEditor(self.m_RCodeWidget)
+        self.m_RCodeWidget.BindBroEditor(self.m_LCodeWidget)
 
     def Refersh(self, leftFile, rightFile):
         with open(leftFile, "r", encoding="utf8") as fp:
