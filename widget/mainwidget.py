@@ -8,7 +8,7 @@
 import sys
 import os
 
-from ui import res_rc
+from ui import res_qrc
 from . import miscwidget, filetree, codecmpwidget
 from PyQt5 import QtWidgets, QtCore
 
