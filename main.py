@@ -3,8 +3,8 @@
 import os
 import sys
 
-from widget import mainwidget
-
+# from widget import mainwidget
+from view import mainwidget
 
 def Start():
     mainwidget.Show()
