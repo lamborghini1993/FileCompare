@@ -79,11 +79,6 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
 
     def InitUI(self):
         self.setVerticalScrollBar(self.m_ScrollBar)
-        # 设置字体
-        # oFont = QtGui.QFont()
-        # oFont.setFamily("Consolas")
-        # self.setFont(oFont)
-
         self.setTabStopWidth(self.fontMetrics().width("_") * 4)
         self.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
         self.setReadOnly(True)

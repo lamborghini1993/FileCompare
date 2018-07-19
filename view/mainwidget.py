@@ -2,7 +2,7 @@
 """
 @Author: lamborghini
 @Date: 2018-07-10 15:10:43
-@Desc: 
+@Desc:
 """
 
 import sys
@@ -23,6 +23,8 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         self.setupUi(self)
         self.m_LeftSrc = ""     # 真实的文本，原文
         self.m_RightSrc = ""
+        self.m_FilterNormal = ["time"]    # 正常的过滤
+        self.m_FilterRE = ["super.*self"]        # 正则过滤
         self.m_CmpResult = {}
         self.InitUI()
         self.InitConnect()
@@ -44,10 +46,10 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         # if not sDir:
         #     return
         sDir = r"E:\mygithub\FileCompare\test"
-        self.m_FileSystemModel = treewidget.CMyFileSystemModel(self)
-        index = self.m_FileSystemModel.setRootPath(sDir)
+        iSystemModel = treewidget.CMyFileSystemModel(self)
+        index = iSystemModel.setRootPath(sDir)
         self.treeView.header().hide()
-        self.treeView.setModel(self.m_FileSystemModel)
+        self.treeView.setModel(iSystemModel)
         self.treeView.setRootIndex(index)
 
     def Refersh(self, leftFile, rightFile):
@@ -125,28 +127,50 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
             else:
                 sRightContent = sRight
 
-            if "ldiff" in dInfo:    # 不一样-小范围个别单词修改
-                self.plainTextEdit_left.AddLineInfo(iRealNum, dInfo.get("lNum", ""), define.LINECOLOR.LMODIFY, define.LINEACT.MODIFY)
-                self.plainTextEdit_right.AddLineInfo(iRealNum, dInfo.get("rNum", ""), define.LINECOLOR.RMODIFY, define.LINEACT.MODIFY)
-
-            elif "lLine" in dInfo and "rLine" not in dInfo:  # 左边添加
-                self.plainTextEdit_left.AddLineInfo(iRealNum, dInfo.get("lNum", ""), define.LINECOLOR.ADD, define.LINEACT.LEFTADD)
-                self.plainTextEdit_right.AddLineInfo(iRealNum, dInfo.get("rNum", ""), define.LINECOLOR.DEL, define.LINEACT.NONE)
-
-            elif "lLine" not in dInfo and "rLine" in dInfo:  # 右边添加
-                self.plainTextEdit_left.AddLineInfo(iRealNum, dInfo.get("lNum", ""), define.LINECOLOR.DEL, define.LINEACT.NONE)
-                self.plainTextEdit_right.AddLineInfo(iRealNum, dInfo.get("rNum", ""), define.LINECOLOR.ADD, define.LINEACT.RIGHTADD)
-
-            else:   # 一样
-                if(dInfo.get("type", "") == define.MODIFICATION.EQUAL):
-                    self.plainTextEdit_left.AddLineInfo(iRealNum, dInfo.get("lNum", ""), define.LINECOLOR.EQUAL, define.LINEACT.NONE)
-                    self.plainTextEdit_right.AddLineInfo(iRealNum, dInfo.get("rNum", ""), define.LINECOLOR.EQUAL, define.LINEACT.NONE)
-                else:   # 不一样-整行修改
-                    self.plainTextEdit_left.AddLineInfo(iRealNum, dInfo.get("lNum", ""), define.LINECOLOR.LMODIFY, define.LINEACT.MODIFY)
-                    self.plainTextEdit_right.AddLineInfo(iRealNum, dInfo.get("rNum", ""), define.LINECOLOR.RMODIFY, define.LINEACT.MODIFY)
+            lColor, lAct, rColor, rAct = self.GetFilterResult(dInfo)
+            self.plainTextEdit_left.AddLineInfo(iRealNum, dInfo.get("lNum", ""), lColor, lAct)
+            self.plainTextEdit_right.AddLineInfo(iRealNum, dInfo.get("rNum", ""), rColor, rAct)
 
         self.plainTextEdit_left.Load(sLeftContent)
         self.plainTextEdit_right.Load(sRightContent)
+
+    def GetFilterResult(self, dInfo):
+        """获取过滤结果"""
+        if(dInfo.get("type", "") == define.MODIFICATION.EQUAL):  # 一样
+            return define.LINECOLOR.EQUAL, define.LINEACT.NONE, define.LINECOLOR.EQUAL, define.LINEACT.NONE
+
+        sLeft = dInfo.get("lLine", "")
+        sRight = dInfo.get("rLine", "")
+
+        bLFilter = self.ValueFilter(sLeft) 
+        bRFilter = self.ValueFilter(sRight)
+        if(bLFilter or bRFilter):  # 符合过滤，一样
+            lColor = rColor = define.LINECOLOR.FILTER
+            if not bLFilter:
+                lColor = define.LINECOLOR.DEL
+            if not bRFilter:
+                rColor = define.LINECOLOR.DEL
+            return lColor, define.LINEACT.NONE, rColor, define.LINEACT.NONE
+
+        if "lLine" in dInfo and "rLine" not in dInfo:  # 左边添加
+            return define.LINECOLOR.ADD, define.LINEACT.LEFTADD, define.LINECOLOR.DEL, define.LINEACT.NONE
+
+        if "lLine" not in dInfo and "rLine" in dInfo:  # 右边添加
+            return define.LINECOLOR.DEL, define.LINEACT.NONE, define.LINECOLOR.ADD, define.LINEACT.RIGHTADD
+        # 不一样
+        return define.LINECOLOR.LMODIFY, define.LINEACT.MODIFY, define.LINECOLOR.RMODIFY, define.LINEACT.MODIFY
+
+    def ValueFilter(self, sInfo):
+        """判断是否需要过滤"""
+        if not sInfo:
+            return False
+        for line in self.m_FilterNormal:
+            if sInfo.find(line) != -1:
+                return True
+        for line in self.m_FilterRE:
+            if re.search(line, sInfo):
+                return True
+        return False
 
 
 def Show():

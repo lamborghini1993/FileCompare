@@ -22,8 +22,9 @@ class MODIFICATION(enum.Enum):
 class LINECOLOR(enum.Enum):
     ADD = QtGui.QColor("#d2a980")
     DEL = QtCore.Qt.darkGray
-    RMODIFY = QtGui.QColor("#aaaaf0")
-    LMODIFY = QtGui.QColor("#faa755")
+    LMODIFY = QtGui.QColor("#8c93ff")
+    RMODIFY = QtGui.QColor("#737bff")
+    FILTER = QtGui.QColor("#fff0f1")
     EQUAL = QtCore.Qt.white
 
 
