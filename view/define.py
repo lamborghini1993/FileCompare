@@ -32,4 +32,5 @@ class LINEACT(enum.Enum):
     LEFTADD = "minus"
     RIGHTADD = "plus"
     MODIFY = "modify"
+    FILTER = "filter"
     NONE = None

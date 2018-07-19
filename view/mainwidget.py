@@ -11,24 +11,26 @@ import difflib
 import re
 import res_rc
 
+
 from PyQt5 import QtWidgets, QtCore
 from . import define, treewidget
 from ui import mainwidget_ui
-from lib import style
+from lib import style, misc
 
 
 class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
+    m_JsonFile = "config.json"
+
     def __init__(self, parent=None):
         super(CMainWidget, self).__init__(parent)
         self.setupUi(self)
         self.m_LeftSrc = ""     # 真实的文本，原文
         self.m_RightSrc = ""
-        self.m_FilterNormal = ["time"]    # 正常的过滤
-        self.m_FilterRE = ["super.*self"]        # 正则过滤
+        self.m_FilterInfo = {}        # 方案：正则过滤列表
         self.m_CmpResult = {}
         self.InitUI()
         self.InitConnect()
-        self.Refersh(define.TEST_FILE1, define.TEST_FILE2)
+        self.Load()
 
     def InitUI(self):
         self.setStyleSheet(style.GetSytle())
@@ -39,18 +41,55 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
     def InitConnect(self):
         self.plainTextEdit_left.BindBroEditor(self.plainTextEdit_right)
         self.plainTextEdit_right.BindBroEditor(self.plainTextEdit_left)
-        self.pushButton_ChooseDir.clicked.connect(self.ChooseDir)
+        self.pushButton_ChooseDir.clicked.connect(self.E_ChooseDir)
+        self.pushButton_compare.clicked.connect(self.E_Compare)
+        self.comboBox.currentTextChanged.connect(self._LoadFilterTextEdit)
+        self.comboBox.editTextChanged.connect(self._LoadFilterTextEdit)
 
-    def ChooseDir(self):
-        # sDir = QtWidgets.QFileDialog.getExistingDirectory(self, "选择log文件夹")
-        # if not sDir:
-        #     return
-        sDir = r"E:\mygithub\FileCompare\test"
+    def Load(self):
+        self.m_Info = misc.JsonLoad(self.m_JsonFile, {})
+        self.m_FilterInfo = self.m_Info.setdefault("filterInfo", {})
+        self.m_OpenDir = self.m_Info.setdefault("dir", "")
+        if self.m_OpenDir:
+            self._LoadDirTree()
+        if self.m_FilterInfo:
+            lstFilter = list(self.m_FilterInfo.keys())
+            fangan = lstFilter[0]
+            self.comboBox.addItems(lstFilter)
+            self.comboBox.setCurrentText(fangan)
+
+    def _LoadFilterTextEdit(self, fangan):
+        """加载过滤方案"""
+        lstRE = self.m_FilterInfo.get(fangan, [])
+        textEdit = "\n".join(lstRE)
+        self.comboBox.setCurrentText(fangan)
+        self.textEdit.setText(textEdit)
+
+    def _LoadDirTree(self):
         iSystemModel = treewidget.CMyFileSystemModel(self)
-        index = iSystemModel.setRootPath(sDir)
+        index = iSystemModel.setRootPath(self.m_OpenDir)
         self.treeView.header().hide()
         self.treeView.setModel(iSystemModel)
         self.treeView.setRootIndex(index)
+
+    def Save(self):
+        self.m_Info["dir"] = self.m_OpenDir
+        misc.JsonDump(self.m_Info, self.m_JsonFile)
+
+    def E_ChooseDir(self):
+        self.m_OpenDir = QtWidgets.QFileDialog.getExistingDirectory(self, "选择log文件夹")
+        if self.m_OpenDir:
+            self._LoadDirTree()
+            self.Save()
+
+    def E_Compare(self):
+        fangan = self.comboBox.currentText()
+        lstRe = self.textEdit.toPlainText().splitlines()
+        if fangan not in self.m_FilterInfo:
+            self.comboBox.addItem(fangan)
+        self.m_FilterInfo[fangan] = [line for line in lstRe if line]
+        self.Save()
+        self.Refersh(define.TEST_FILE1, define.TEST_FILE2)
 
     def Refersh(self, leftFile, rightFile):
         with open(leftFile, "r", encoding="utf8") as fp:
@@ -142,15 +181,15 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         sLeft = dInfo.get("lLine", "")
         sRight = dInfo.get("rLine", "")
 
-        bLFilter = self.ValueFilter(sLeft) 
+        bLFilter = self.ValueFilter(sLeft)
         bRFilter = self.ValueFilter(sRight)
         if(bLFilter or bRFilter):  # 符合过滤，一样
-            lColor = rColor = define.LINECOLOR.FILTER
+            left = right = define.LINECOLOR.FILTER, define.LINEACT.FILTER
             if not bLFilter:
-                lColor = define.LINECOLOR.DEL
+                left = define.LINECOLOR.DEL, define.LINEACT.NONE
             if not bRFilter:
-                rColor = define.LINECOLOR.DEL
-            return lColor, define.LINEACT.NONE, rColor, define.LINEACT.NONE
+                right = define.LINECOLOR.DEL, define.LINEACT.NONE
+            return left[0], left[1], right[0], right[1]
 
         if "lLine" in dInfo and "rLine" not in dInfo:  # 左边添加
             return define.LINECOLOR.ADD, define.LINEACT.LEFTADD, define.LINECOLOR.DEL, define.LINEACT.NONE
@@ -164,13 +203,10 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         """判断是否需要过滤"""
         if not sInfo:
             return False
-        for line in self.m_FilterNormal:
+        fangan = self.comboBox.currentText()
+        for line in self.m_FilterInfo.get(fangan, ""):
             if sInfo.find(line) != -1:
                 return True
-        for line in self.m_FilterRE:
-            if re.search(line, sInfo):
-                return True
-        return False
 
 
 def Show():
