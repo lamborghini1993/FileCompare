@@ -52,7 +52,7 @@
          <string>上一个</string>
         </property>
         <property name="icon">
-         <iconset resource="res.qrc">
+         <iconset resource="png/res.qrc">
           <normaloff>:/app/up.png</normaloff>:/app/up.png</iconset>
         </property>
         <property name="iconSize">
@@ -82,7 +82,7 @@
          <string>下一个</string>
         </property>
         <property name="icon">
-         <iconset resource="res.qrc">
+         <iconset resource="png/res.qrc">
           <normaloff>:/app/down.png</normaloff>:/app/down.png</iconset>
         </property>
         <property name="iconSize">
@@ -112,7 +112,7 @@
          <string>查找</string>
         </property>
         <property name="icon">
-         <iconset resource="res.qrc">
+         <iconset resource="png/res.qrc">
           <normaloff>:/app/find.png</normaloff>:/app/find.png</iconset>
         </property>
         <property name="iconSize">
@@ -142,7 +142,7 @@
          <string>跳转</string>
         </property>
         <property name="icon">
-         <iconset resource="res.qrc">
+         <iconset resource="png/res.qrc">
           <normaloff>:/app/jump.png</normaloff>:/app/jump.png</iconset>
         </property>
         <property name="iconSize">
@@ -256,7 +256,7 @@
       <widget class="QWidget" name="widget_3" native="true">
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <layout class="QGridLayout" name="gridLayout">
+         <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="2,3">
           <item row="0" column="0">
            <widget class="QLabel" name="label">
             <property name="font">
@@ -322,7 +322,7 @@
          </layout>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="2,2,1">
           <item>
            <widget class="QLabel" name="label_3">
             <property name="font">
@@ -348,6 +348,25 @@
               <height>30</height>
              </size>
             </property>
+            <property name="font">
+             <font>
+              <pointsize>14</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="editable">
+             <bool>true</bool>
+            </property>
+            <property name="currentText">
+             <string>初始方案</string>
+            </property>
+            <property name="insertPolicy">
+             <enum>QComboBox::InsertAtBottom</enum>
+            </property>
+            <property name="sizeAdjustPolicy">
+             <enum>QComboBox::AdjustToContentsOnFirstShow</enum>
+            </property>
            </widget>
           </item>
           <item>
@@ -366,6 +385,16 @@
             </property>
             <property name="text">
              <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="png/res.qrc">
+              <normaloff>:/app/del.png</normaloff>:/app/del.png</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>30</width>
+              <height>30</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -448,7 +477,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="res.qrc"/>
+  <include location="png/res.qrc"/>
  </resources>
  <connections/>
 </ui>
