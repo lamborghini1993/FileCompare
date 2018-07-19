@@ -7,9 +7,10 @@
 
 import sys
 import os
+import res_rc
 
 from PyQt5 import QtWidgets, QtCore
-from ui import res_qrc, mainwidget_ui
+from ui import mainwidget_ui
 from lib import style
 
 
