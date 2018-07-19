@@ -7,20 +7,17 @@
 
 QSS = """
     QWidget {
-        font-family: "微软雅黑";
+        font-family: "Consolas";
         border-width: 1px;
         border-color: $background5;
     }
     QScrollBar::vertical {
         margin: 0px;
         background-color: $background5;
-        border: 0px;
-        width: 4px;
+        border: 6px;
+        width: 20px;
     }
-    QPlainTextEdit {
-        font-family: "Consolas";
-    }
-    QComboBox, QLineEdit, QSpinBox, QTextEdit, QListView, QPlainTextEdit {
+    QComboBox, QLineEdit, QSpinBox, QTextEdit, QListView {
         background-color: $background6;
         selection-color: $background1;
         selection-background-color: $background2;

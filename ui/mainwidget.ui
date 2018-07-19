@@ -176,7 +176,7 @@
       <widget class="QWidget" name="widget" native="true">
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <widget class="QPushButton" name="pushButton_Open">
+         <widget class="QPushButton" name="pushButton_ChooseDir">
           <property name="minimumSize">
            <size>
             <width>0</width>
@@ -196,7 +196,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QTreeView" name="treeView"/>
+         <widget class="CMyTreeView" name="treeView"/>
         </item>
        </layout>
       </widget>
@@ -220,7 +220,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPlainTextEdit" name="plainTextEdit_left">
+             <widget class="CCodeEdit" name="plainTextEdit_left">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -241,7 +241,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPlainTextEdit" name="plainTextEdit_right">
+             <widget class="CCodeEdit" name="plainTextEdit_right">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -372,6 +372,18 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CCodeEdit</class>
+   <extends>QPlainTextEdit</extends>
+   <header>view.codewidget</header>
+  </customwidget>
+  <customwidget>
+   <class>CMyTreeView</class>
+   <extends>QTreeView</extends>
+   <header>view.treewidget</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="res.qrc"/>
  </resources>
