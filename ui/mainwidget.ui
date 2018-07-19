@@ -112,8 +112,8 @@
          <string>查找</string>
         </property>
         <property name="icon">
-         <iconset>
-          <normaloff>find.png</normaloff>find.png</iconset>
+         <iconset resource="res.qrc">
+          <normaloff>:/app/find.png</normaloff>:/app/find.png</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -142,8 +142,8 @@
          <string>跳转</string>
         </property>
         <property name="icon">
-         <iconset>
-          <normaloff>jump.png</normaloff>jump.png</iconset>
+         <iconset resource="res.qrc">
+          <normaloff>:/app/jump.png</normaloff>:/app/jump.png</iconset>
         </property>
         <property name="iconSize">
          <size>
