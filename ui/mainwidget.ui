@@ -322,9 +322,15 @@
          </layout>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="2,2,1">
+         <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="2">
           <item>
            <widget class="QLabel" name="label_3">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>30</height>
+             </size>
+            </property>
             <property name="font">
              <font>
               <pointsize>14</pointsize>
@@ -333,13 +339,17 @@
              </font>
             </property>
             <property name="text">
-             <string>过滤方案:</string>
+             <string>选择过滤方案:</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="2,1">
           <item>
            <widget class="QComboBox" name="comboBox">
             <property name="minimumSize">
@@ -355,11 +365,14 @@
               <bold>true</bold>
              </font>
             </property>
+            <property name="layoutDirection">
+             <enum>Qt::LeftToRight</enum>
+            </property>
             <property name="editable">
              <bool>true</bool>
             </property>
             <property name="currentText">
-             <string>初始方案</string>
+             <string/>
             </property>
             <property name="insertPolicy">
              <enum>QComboBox::InsertAtBottom</enum>
@@ -373,8 +386,8 @@
            <widget class="QPushButton" name="pushButton">
             <property name="minimumSize">
              <size>
-              <width>30</width>
-              <height>30</height>
+              <width>0</width>
+              <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
@@ -382,6 +395,13 @@
               <width>30</width>
               <height>30</height>
              </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>14</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
             </property>
             <property name="text">
              <string/>
@@ -401,26 +421,7 @@
          </layout>
         </item>
         <item>
-         <widget class="QTextEdit" name="textEdit_Normal">
-          <property name="toolTip">
-           <string>正常的过滤字段</string>
-          </property>
-          <property name="statusTip">
-           <string/>
-          </property>
-          <property name="whatsThis">
-           <string/>
-          </property>
-          <property name="accessibleDescription">
-           <string/>
-          </property>
-          <property name="placeholderText">
-           <string>关键字过滤规则，每一行代表一种关键字过滤</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QTextEdit" name="textEdit_RE">
+         <widget class="QTextEdit" name="textEdit">
           <property name="placeholderText">
            <string>使用python的正则匹配过滤规则，每一行代表一种过滤</string>
           </property>
