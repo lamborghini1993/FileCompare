@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>文件对比工具(帧debug)</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="png/res.qrc">
+    <normaloff>:/app/main.ico</normaloff>:/app/main.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,7">

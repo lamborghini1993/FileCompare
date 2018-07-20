@@ -9,5 +9,6 @@
         <file>jump.png</file>
         <file>del.png</file>
         <file>filter.png</file>
+        <file>main.ico</file>
     </qresource>
 </RCC>
