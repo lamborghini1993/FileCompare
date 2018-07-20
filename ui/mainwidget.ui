@@ -258,7 +258,24 @@
        </layout>
       </widget>
       <widget class="QWidget" name="widget_3" native="true">
+       <property name="font">
+        <font>
+         <pointsize>14</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
        <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QLabel" name="label_Frame">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
         <item>
          <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="2,3">
           <item row="0" column="0">

@@ -8,9 +8,13 @@
 import weakref
 import time
 import os
+import re
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
+FRAME_RE = r"@framestart.*?@framesend"
+CUR_FRAME = r"!#curframe:(\d+)"
+MAX_NUM = 99999999
 
 def GetLinePixMap(png):
     if png:
@@ -74,6 +78,8 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_BindEditor = None
         self.m_BindLabel = None
         self.m_LineNum = 0      # 代码的行数
+        self.m_MinFrame = MAX_NUM
+        self.m_MaxFrame = 0
         self.m_LineInfo = {}    # 真实行号:(原来行号,行首变化行为)
         self.m_BlockBgInfo = {}  # 真实行号:每行的颜色
         self.m_bDragIn = False
@@ -243,8 +249,24 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_bDragIn = False
         event.acceptProposedAction()
         self.m_CurFile = str(event.mimeData().text())
-        self.m_BindLabel().setText(os.path.basename(self.m_CurFile))
+        self.m_MaxFrame = 0
+        self.m_MinFrame = MAX_NUM
+        self.SplitFileByFrame()
         self.CLEAR_PLAIN_TEXT_EDIT.emit()
 
-    def SplitFileByFrame(self, file):
-        pass
+    def SplitFileByFrame(self):
+        with open(self.m_CurFile, "r", encoding="utf-8") as fp:
+            lines = fp.read()
+            lstFrame = re.findall(FRAME_RE, lines, flags=re.DOTALL)
+            for frams in lstFrame:
+                oMatch = re.search(CUR_FRAME, frams, flags=re.DOTALL)
+                num = oMatch.group()[11:]
+                newfile = self.m_CurFile + "_" + num
+                self.m_MinFrame = min(int(num), self.m_MinFrame)
+                self.m_MaxFrame = max(int(num), self.m_MaxFrame)
+                if(os.path.exists(newfile)):
+                    continue
+                with open(newfile, "w", encoding="utf-8") as ffp:
+                    ffp.write(frams)
+        labelText = os.path.basename(self.m_CurFile) + "(%s-%s)" % (self.m_MinFrame, self.m_MaxFrame)
+        self.m_BindLabel().setText(labelText)

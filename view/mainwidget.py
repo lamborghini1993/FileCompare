@@ -24,8 +24,8 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
     def __init__(self, parent=None):
         super(CMainWidget, self).__init__(parent)
         self.setupUi(self)
-        self.m_LeftSrc = ""     # 真实的文本，原文
-        self.m_RightSrc = ""
+        self.m_LeftSrc = []     # 真实的文本，原文
+        self.m_RightSrc = []
         self.m_FilterInfo = {}        # 方案：正则过滤列表
         self.m_CmpResult = {}
         self.InitUI()
@@ -97,25 +97,50 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
             self.comboBox.addItem(fangan)
         self.m_FilterInfo[fangan] = [line for line in lstRe if line]
         self.Save()
-        if(self.plainTextEdit_left.m_CurFile and self.plainTextEdit_right.m_CurFile):
-            self.Refersh(self.plainTextEdit_left.m_CurFile, self.plainTextEdit_right.m_CurFile)
+        if(self._ValidTwoPlain()):
+            self._StartCompare()
 
-    def E_ClearPlainTextEdit(self):
-        self.plainTextEdit_left.clear()
-        self.plainTextEdit_right.clear()
-
-    def Refersh(self, leftFile, rightFile):
-        with open(leftFile, "r", encoding="utf8") as fp:
-            self.m_LeftSrc = fp.read()
-        with open(rightFile, "r", encoding="utf8") as fp:
-            self.m_RightSrc = fp.read()
+    def _StartCompare(self):
+        start = int(self.spinBox_start.text())
+        end = int(self.spinBox_end.text())
+        self.m_LeftSrc = self._GetFileList(self.plainTextEdit_left.m_CurFile, start, end)
+        self.m_RightSrc = self._GetFileList(self.plainTextEdit_right.m_CurFile, start, end)
         self.m_CmpResult = {}
         self.CompareByStr()
         self.RefershCmp()
 
+    def _GetFileList(self, files, start, end):
+        lst = []
+        for x in range(start, end+1):
+            fileTmp = files + "_" + str(x)
+            with open(fileTmp, "r", encoding="utf-8") as fp:
+                lstTmp = fp.read().splitlines()
+                lst += lstTmp
+        return lst
+
+    def _ValidTwoPlain(self):
+        if(self.plainTextEdit_left.m_CurFile and self.plainTextEdit_right.m_CurFile):
+            return True
+        return False
+
+    def E_ClearPlainTextEdit(self):
+        self.plainTextEdit_left.clear()
+        self.plainTextEdit_right.clear()
+        if(self._ValidTwoPlain()):
+            maxLeft = max(self.plainTextEdit_left.m_MinFrame, self.plainTextEdit_right.m_MinFrame)
+            minRight = min(self.plainTextEdit_left.m_MaxFrame, self.plainTextEdit_right.m_MaxFrame)
+            if(maxLeft <= minRight):    # 有帧的交集
+                self.label_Frame.setText("%s-%s帧" % (maxLeft, minRight))
+                self.spinBox_start.setMinimum(maxLeft)
+                self.spinBox_start.setMaximum(minRight)
+                self.spinBox_end.setMinimum(maxLeft)
+                self.spinBox_end.setMaximum(minRight)
+            else:   # 无帧的交集
+                self.label_Frame.setText("无共同帧")
+
     def CompareByStr(self):
         differ = difflib.Differ()
-        diff = differ.compare(self.m_LeftSrc.splitlines(), self.m_RightSrc.splitlines())
+        diff = differ.compare(self.m_LeftSrc, self.m_RightSrc)
         lstDiff = list(diff)
         dResult = self.m_CmpResult
         iLNum = iRight = 1
