@@ -7,6 +7,7 @@
 
 import weakref
 import time
+import os
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
@@ -66,12 +67,17 @@ class CLineNumArea(QtWidgets.QWidget):
 
 
 class CCodeEdit(QtWidgets.QPlainTextEdit):
+    CLEAR_PLAIN_TEXT_EDIT = QtCore.pyqtSignal()
+
     def __init__(self, *args):
         super(CCodeEdit, self).__init__(*args)
         self.m_BindEditor = None
+        self.m_BindLabel = None
         self.m_LineNum = 0      # 代码的行数
         self.m_LineInfo = {}    # 真实行号:(原来行号,行首变化行为)
         self.m_BlockBgInfo = {}  # 真实行号:每行的颜色
+        self.m_bDragIn = False
+        self.m_CurFile = None
         self.m_LineNumArea = CLineNumArea(self)
         self.m_ScrollBar = CScrollBar(self)
         self.InitUI()
@@ -85,6 +91,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.UpdateLineNumAreaWidth(0)
         self.SetShowTabAndSpaces(True)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setAcceptDrops(True)
 
     def InitConnect(self):
         self.blockCountChanged.connect(self.UpdateLineNumAreaWidth)
@@ -102,6 +109,9 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_BindEditor = weakref.ref(oEditor)
         self.verticalScrollBar().valueChanged.connect(self.OnVScrollBarValChanged)
         self.horizontalScrollBar().valueChanged.connect(self.OnHScrollBarValChanged)
+
+    def BindLabel(self, oLabel):
+        self.m_BindLabel = weakref.ref(oLabel)
 
     def OnVScrollBarValChanged(self, iVal):
         self.m_BindEditor().verticalScrollBar().setValue(iVal)
@@ -191,3 +201,50 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
             iTop = iBottom
             iBottom = iTop + int(self.blockBoundingRect(qBlock).height())
             iBlockNum += 1
+
+    def CanDrag(self, event):
+        """判断是否支持拖拽"""
+        return True
+        # if not event.mimeData().hasText():
+        #     return False
+        # data = str(event.mimeData().text())
+        # if data.startswith("open "):
+        #     return True
+        # return False
+
+    def dragEnterEvent(self, event):
+        """拖动操作进入本窗口"""
+        super(CCodeEdit, self).dragEnterEvent(event)
+        if not self.CanDrag(event):
+            event.ignore()
+            return
+        event.accept()
+        event.acceptProposedAction()
+        self.m_bDragIn = True
+
+    def dragLeaveEvent(self, event):
+        """拖动离开触发"""
+        super(CCodeEdit, self).dragLeaveEvent(event)
+        self.m_bDragIn = False
+
+    def dragMoveEvent(self, event):
+        if not self.CanDrag(event):
+            event.ignore()
+            return
+        event.accept()
+        event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        """放开了鼠标完成drop操作"""
+        super(CCodeEdit, self).dropEvent(event)
+        if not self.CanDrag(event):
+            event.ignore()
+            return
+        self.m_bDragIn = False
+        event.acceptProposedAction()
+        self.m_CurFile = str(event.mimeData().text())
+        self.m_BindLabel().setText(os.path.basename(self.m_CurFile))
+        self.CLEAR_PLAIN_TEXT_EDIT.emit()
+
+    def SplitFileByFrame(self, file):
+        pass

@@ -5,32 +5,51 @@
 @Desc: 
 """
 
-from PyQt5 import QtWidgets, QtCore
+import os
+import weakref
+
+from PyQt5 import QtWidgets, QtCore, QtGui
 
 
 class CMyTreeView(QtWidgets.QTreeView):
-    SIGNAL_CURRENT_CHANGED = QtCore.pyqtSignal(
-        "PyQt_PyObject", "PyQt_PyObject")
 
     def __init__(self, parent=None):
         super(CMyTreeView, self).__init__(parent)
+        self.m_DragPosition = None
+        self.m_DragItem = None
 
-    # def mouseDoubleClickEvent(self, event):
-    #     super(CMyTreeView, self).mouseDoubleClickEvent(event)
-    #     print("mouseDoubleClickEvent:", event)
+    def SetFileSystemModel(self, obj):
+        self.m_FileSystemModel = weakref.ref(obj)
 
-    # def currentChanged(self, cur, pre):
-    #     super(CMyTreeView, self).currentChanged(cur, pre)
-    #     print("currentChanged:", cur, pre)
-    #     self.SIGNAL_CURRENT_CHANGED.emit(cur, pre)
+    def mousePressEvent(self, event):
+        super(CMyTreeView, self).mousePressEvent(event)
+        if(event.button() == QtCore.Qt.LeftButton):
+            self.m_DragPosition = event.pos()
+            index = self.indexAt(self.m_DragPosition)
+            self.m_DragFile = self.m_FileSystemModel().filePath(index)
 
-    # def mousePressEvent(self, event):
-    #     super(CMyTreeView, self).mousePressEvent(event)
-    #     print("mousePressEvent:", event, self.currentIndex)
+    def mouseMoveEvent(self, event):
+        super(CMyTreeView, self).mousePressEvent(event)
+        if(not (event.button and QtCore.Qt.LeftButton)):
+            return
+        if((event.pos() - self.m_DragPosition).manhattanLength() < QtWidgets.QApplication.startDragDistance()):
+            return
 
-    # def currentIndex(self, event):
-    #     super(CMyTreeView, self).currentIndex(event)
-    #     print("currentIndex:", event)
+        drag = QtGui.QDrag(self)
+        oMimeData = QtCore.QMimeData()
+        oMimeData.setText(self.m_DragFile)
+        drag.setMimeData(oMimeData)
+
+        pixMap = QtGui.QPixmap(120, 18)
+        painter = QtGui.QPainter(pixMap)
+        # file = os.path.basename(self.m_DragFile)
+        # painter.drawText(QtCore.QRectF(0, 0, 120, 18), "open " + file, QtGui.QTextOption(QtCore.Qt.AlignVCenter))
+        painter.drawText(QtCore.QRectF(0, 0, 120, 18), "drag", QtGui.QTextOption(QtCore.Qt.AlignVCenter))
+        drag.setPixmap(pixMap)
+        result = drag.exec(QtCore.Qt.MoveAction)
+        del painter
+        del pixMap
+        del drag
 
 
 class CMyFileSystemModel(QtWidgets.QFileSystemModel):
@@ -40,7 +59,3 @@ class CMyFileSystemModel(QtWidgets.QFileSystemModel):
 
     def columnCount(self, *args):
         return 1
-
-    def mouseDoubleClickEvent(self, *args):
-        # print("1", args)
-        pass

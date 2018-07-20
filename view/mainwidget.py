@@ -29,6 +29,7 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         self.m_FilterInfo = {}        # 方案：正则过滤列表
         self.m_CmpResult = {}
         self.InitUI()
+        self.InitBind()
         self.InitConnect()
         self.Load()
 
@@ -38,13 +39,19 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         self.splitter.setStretchFactor(1, 8)
         self.splitter.setStretchFactor(2, 2)
 
-    def InitConnect(self):
+    def InitBind(self):
         self.plainTextEdit_left.BindBroEditor(self.plainTextEdit_right)
         self.plainTextEdit_right.BindBroEditor(self.plainTextEdit_left)
+        self.plainTextEdit_left.BindLabel(self.label_left)
+        self.plainTextEdit_right.BindLabel(self.label_right)
+
+    def InitConnect(self):
         self.pushButton_ChooseDir.clicked.connect(self.E_ChooseDir)
         self.pushButton_compare.clicked.connect(self.E_Compare)
         self.comboBox.currentTextChanged.connect(self._LoadFilterTextEdit)
         self.comboBox.editTextChanged.connect(self._LoadFilterTextEdit)
+        self.plainTextEdit_left.CLEAR_PLAIN_TEXT_EDIT.connect(self.E_ClearPlainTextEdit)
+        self.plainTextEdit_right.CLEAR_PLAIN_TEXT_EDIT.connect(self.E_ClearPlainTextEdit)
 
     def Load(self):
         self.m_Info = misc.JsonLoad(self.m_JsonFile, {})
@@ -66,10 +73,11 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         self.textEdit.setText(textEdit)
 
     def _LoadDirTree(self):
-        iSystemModel = treewidget.CMyFileSystemModel(self)
-        index = iSystemModel.setRootPath(self.m_OpenDir)
+        oSystemModel = treewidget.CMyFileSystemModel(self)
+        index = oSystemModel.setRootPath(self.m_OpenDir)
+        self.treeView.SetFileSystemModel(oSystemModel)
         self.treeView.header().hide()
-        self.treeView.setModel(iSystemModel)
+        self.treeView.setModel(oSystemModel)
         self.treeView.setRootIndex(index)
 
     def Save(self):
@@ -89,7 +97,12 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
             self.comboBox.addItem(fangan)
         self.m_FilterInfo[fangan] = [line for line in lstRe if line]
         self.Save()
-        self.Refersh(define.TEST_FILE1, define.TEST_FILE2)
+        if(self.plainTextEdit_left.m_CurFile and self.plainTextEdit_right.m_CurFile):
+            self.Refersh(self.plainTextEdit_left.m_CurFile, self.plainTextEdit_right.m_CurFile)
+
+    def E_ClearPlainTextEdit(self):
+        self.plainTextEdit_left.clear()
+        self.plainTextEdit_right.clear()
 
     def Refersh(self, leftFile, rightFile):
         with open(leftFile, "r", encoding="utf8") as fp:
