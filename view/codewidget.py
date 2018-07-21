@@ -12,7 +12,7 @@ import re
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-FRAME_RE = r"@framestart.*?@framesend"
+FRAME_RE = r"@framestart.*?@frameend"
 CUR_FRAME = r"!#curframe:(\d+)"
 MAX_NUM = 99999999
 
@@ -260,6 +260,8 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
             lstFrame = re.findall(FRAME_RE, lines, flags=re.DOTALL)
             for frams in lstFrame:
                 oMatch = re.search(CUR_FRAME, frams, flags=re.DOTALL)
+                if not oMatch:
+                    continue
                 num = oMatch.group()[11:]
                 newfile = self.m_CurFile + "_" + num
                 self.m_MinFrame = min(int(num), self.m_MinFrame)

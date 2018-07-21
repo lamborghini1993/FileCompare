@@ -56,6 +56,8 @@ class CMyFileSystemModel(QtWidgets.QFileSystemModel):
     def __init__(self, parent=None):
         super(CMyFileSystemModel, self).__init__(parent)
         self.setFilter(QtCore.QDir.Files | QtCore.QDir.AllDirs | QtCore.QDir.NoDotAndDotDot)
+        self.setNameFilters(["*.py", "*.txt", "*.log"])
+        self.setNameFilterDisables(False)
 
     def columnCount(self, *args):
         return 1
