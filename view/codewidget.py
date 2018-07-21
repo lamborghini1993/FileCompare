@@ -246,5 +246,3 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_BindLabel().setText(os.path.basename(self.m_CurFile))
         self.CLEAR_PLAIN_TEXT_EDIT.emit()
 
-    def SplitFileByFrame(self, file):
-        pass

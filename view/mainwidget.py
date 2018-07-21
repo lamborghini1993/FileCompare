@@ -10,10 +10,10 @@ import os
 import difflib
 import re
 import res_rc
-
+import define
 
 from PyQt5 import QtWidgets, QtCore
-from . import define, treewidget
+from . import treewidget
 from ui import mainwidget_ui
 from lib import style, misc
 
