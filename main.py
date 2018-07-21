@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
+import define
 
-# from widget import mainwidget
 from view import mainwidget
 
+
 def Start():
+    if not os.path.exists(define.CACHE_DIR):
+        os.makedirs(define.CACHE_DIR)
     mainwidget.Show()
 
 

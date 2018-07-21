@@ -5,11 +5,11 @@
 @Desc: 一些公共定义
 """
 import enum
+import os
 
 from PyQt5 import QtCore, QtGui
 
-TEST_FILE1 = r"E:\mygithub\FileCompare\test\py2ui.py"
-TEST_FILE2 = r"E:\mygithub\FileCompare\test\py2ui2.py"
+CACHE_DIR = os.path.join(os.getcwd(), "Cache")
 
 
 class MODIFICATION(enum.Enum):

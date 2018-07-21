@@ -9,12 +9,15 @@ import weakref
 import time
 import os
 import re
+import hashlib
+import define
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 FRAME_RE = r"@framestart.*?@frameend"
 CUR_FRAME = r"!#curframe:(\d+)"
 MAX_NUM = 99999999
+
 
 def GetLinePixMap(png):
     if png:
@@ -255,6 +258,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.CLEAR_PLAIN_TEXT_EDIT.emit()
 
     def SplitFileByFrame(self):
+        hashFile = hashlib.md5(self.m_CurFile.encode("utf-8")).hexdigest()
         with open(self.m_CurFile, "r", encoding="utf-8") as fp:
             lines = fp.read()
             lstFrame = re.findall(FRAME_RE, lines, flags=re.DOTALL)
@@ -263,7 +267,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
                 if not oMatch:
                     continue
                 num = oMatch.group()[11:]
-                newfile = self.m_CurFile + "_" + num
+                newfile = os.path.join(define.CACHE_DIR, hashFile + "_" + num)
                 self.m_MinFrame = min(int(num), self.m_MinFrame)
                 self.m_MaxFrame = max(int(num), self.m_MaxFrame)
                 if(os.path.exists(newfile)):

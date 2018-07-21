@@ -10,10 +10,11 @@ import os
 import difflib
 import re
 import res_rc
-
+import define
+import hashlib
 
 from PyQt5 import QtWidgets, QtCore
-from . import define, treewidget
+from . import treewidget
 from ui import mainwidget_ui
 from lib import style, misc
 
@@ -111,8 +112,12 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
 
     def _GetFileList(self, files, start, end):
         lst = []
+        hashFile = hashlib.md5(files.encode("utf-8")).hexdigest()
+        hashFile = os.path.join(define.CACHE_DIR, hashFile)
         for x in range(start, end+1):
-            fileTmp = files + "_" + str(x)
+            fileTmp = hashFile + "_" + str(x)
+            if not os.path.exists(fileTmp):
+                continue
             with open(fileTmp, "r", encoding="utf-8") as fp:
                 lstTmp = fp.read().splitlines()
                 lst += lstTmp
