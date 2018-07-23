@@ -305,6 +305,8 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_bDragIn = False
         event.acceptProposedAction()
         self.m_CurFile = str(event.mimeData().text())
+        if(self.m_CurFile.startswith("file:///")):
+            self.m_CurFile = self.m_CurFile[8:]
         self.m_MaxFrame = 0
         self.m_MinFrame = MAX_NUM
         self.SplitFileByFrame()
