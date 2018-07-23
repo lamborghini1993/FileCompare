@@ -187,24 +187,31 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
             self.E_UpdateLineNumAreaWidth(0)
 
     def E_ChangedCursor(self):
-        extSelections = []
+        oTxtCursor = self.textCursor()
+        sCurWord = str(oTxtCursor.selectedText())
+        if sCurWord:
+            self._HightLightSelectWord(sCurWord)
+            self.m_BindEditor()._HightLightSelectWord(sCurWord)
+        else:
+            self._HightLightSelectLine()
+            self.m_BindEditor()._HightLightSelectLine()
+        # TODO:scrollbar颜色跟着改变
 
-        # 高亮当前行
+    def _HightLightSelectLine(self):
+        """高亮选择的行"""
+        extSelections = []
         lineSelection = QtWidgets.QTextEdit.ExtraSelection()
-        # lineColor = QtGui.QColor(QtCore.Qt.gray).lighter(160)
         lineColor = QtGui.QColor(QtCore.Qt.green).lighter(160)
         lineSelection.format.setBackground(lineColor)
         lineSelection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
         lineSelection.cursor = self.textCursor()
         extSelections.append(lineSelection)
+        self.setExtraSelections(extSelections)
 
-        # 高亮所有选中的单词
+    def _HightLightSelectWord(self, sCurWord):
+        """高亮选择的单词"""
+        extSelections = []
         lstCurWordCursor = []
-        oTxtCursor = self.textCursor()
-        sCurWord = str(oTxtCursor.selectedText())
-        if not sCurWord:
-            self.setExtraSelections(extSelections)
-            return
         iFindOpt = QtGui.QTextDocument.FindCaseSensitively | QtGui.QTextDocument.FindWholeWords
         oTargetCursor = self.document().find(sCurWord, 0, iFindOpt)
         while not oTargetCursor.isNull():
@@ -215,9 +222,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
             wordSelection.format.setBackground(define.LINECOLOR.WORDSELECT.value)
             wordSelection.cursor = oCursor
             extSelections.append(wordSelection)
-        self.m_ScrollBar.SetBlockBgInfo(self.m_BlockBgInfo)
         self.setExtraSelections(extSelections)
-        # TODO:scrollbar颜色跟着改变
 
     def E_UpdateSelBlock(self):
         iBlock = self.textCursor().blockNumber()
