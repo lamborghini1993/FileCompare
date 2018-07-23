@@ -25,6 +25,8 @@ class LINECOLOR(enum.Enum):
     FILTER = QtGui.QColor("#fff0f1")
     EQUAL = QtCore.Qt.white
 
+    WORDSELECT = QtGui.QColor("#FF9244")
+
 
 class LINEACT(enum.Enum):
     LEFTADD = "minus"
