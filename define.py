@@ -11,7 +11,6 @@ from PyQt5 import QtCore, QtGui
 
 CACHE_DIR = os.path.join(os.getcwd(), "Cache")
 
-
 class MODIFICATION(enum.Enum):
     ADD = 1
     DELETE = 2
@@ -26,6 +25,8 @@ class LINECOLOR(enum.Enum):
     RMODIFY = QtGui.QColor("#737bff")
     FILTER = QtGui.QColor("#fff0f1")
     EQUAL = QtCore.Qt.white
+
+    WORDSELECT = QtGui.QColor("#FF9244")
 
 
 class LINEACT(enum.Enum):

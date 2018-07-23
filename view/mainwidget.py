@@ -53,6 +53,8 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         self.comboBox.editTextChanged.connect(self._LoadFilterTextEdit)
         self.plainTextEdit_left.CLEAR_PLAIN_TEXT_EDIT.connect(self.E_ClearPlainTextEdit)
         self.plainTextEdit_right.CLEAR_PLAIN_TEXT_EDIT.connect(self.E_ClearPlainTextEdit)
+        self.pushButton_Down.clicked.connect(self.plainTextEdit_left.JumpToNextMod)
+        self.pushButton_Up.clicked.connect(self.plainTextEdit_left.JumpToPreviousMod)
 
     def Load(self):
         self.m_Info = misc.JsonLoad(self.m_JsonFile, {})
@@ -107,8 +109,11 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         self.m_LeftSrc = self._GetFileList(self.plainTextEdit_left.m_CurFile, start, end)
         self.m_RightSrc = self._GetFileList(self.plainTextEdit_right.m_CurFile, start, end)
         self.m_CmpResult = {}
+        self.plainTextEdit_left.Init()
+        self.plainTextEdit_right.Init()
         self.CompareByStr()
         self.RefershCmp()
+        self.pushButton_Down.click()  # 选择第一个不同的行
 
     def _GetFileList(self, files, start, end):
         lst = []
@@ -148,8 +153,8 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         diff = differ.compare(self.m_LeftSrc, self.m_RightSrc)
         lstDiff = list(diff)
         dResult = self.m_CmpResult
-        iLNum = iRight = 1
-        iLRealNum = iRRealNum = 1
+        iLNum = iRight = 1  # 原来文本文件的行数
+        iLRealNum = iRRealNum = 0   # 真实的QPlainTextEditor的行数，因为控件是从0开始的，所以初始化为0
         i = 0
         while i < len(lstDiff):
             prefix = lstDiff[i][:2]
@@ -210,11 +215,19 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
                 sRightContent = sRight
 
             lColor, lAct, rColor, rAct = self.GetFilterResult(dInfo)
+            if self._IsModify(lAct) or self._IsModify(rAct):
+                self.plainTextEdit_left.AddModBlock(iRealNum)
+                self.plainTextEdit_right.AddModBlock(iRealNum)
             self.plainTextEdit_left.AddLineInfo(iRealNum, dInfo.get("lNum", ""), lColor, lAct)
             self.plainTextEdit_right.AddLineInfo(iRealNum, dInfo.get("rNum", ""), rColor, rAct)
 
         self.plainTextEdit_left.Load(sLeftContent)
         self.plainTextEdit_right.Load(sRightContent)
+
+    def _IsModify(self, act):
+        if act in (define.LINEACT.LEFTADD, define.LINEACT.RIGHTADD, define.LINEACT.MODIFY):
+            return True
+        return False
 
     def GetFilterResult(self, dInfo):
         """获取过滤结果"""

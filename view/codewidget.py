@@ -53,7 +53,7 @@ class CScrollBar(QtWidgets.QScrollBar):
         w = self.width() - 8
         for iBlock, bgColor in self.m_BlockBgDict.items():
             x = 4
-            y = fSingleH * (iBlock - 1) + self.width()
+            y = fSingleH * iBlock + self.width()
             rect = QtCore.QRectF(x, y, w, fBlkHeight)
             painter.fillRect(rect, bgColor)
 
@@ -80,31 +80,38 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         super(CCodeEdit, self).__init__(*args)
         self.m_BindEditor = None
         self.m_BindLabel = None
-        self.m_LineNum = 0      # 代码的行数
         self.m_MinFrame = MAX_NUM
         self.m_MaxFrame = 0
-        self.m_LineInfo = {}    # 真实行号:(原来行号,行首变化行为)
-        self.m_BlockBgInfo = {}  # 真实行号:每行的颜色
-        self.m_bDragIn = False
-        self.m_CurFile = None
         self.m_LineNumArea = CLineNumArea(self)
         self.m_ScrollBar = CScrollBar(self)
+        self.Init()
         self.InitUI()
         self.InitConnect()
 
+    def Init(self):
+        self.m_LineInfo = {}        # 真实行号:(原来行号,行首变化行为)  下标从0开始
+        self.m_BlockBgInfo = {}     # 真实行号:每行的颜色   下标从0开始
+        self.m_ModBlockList = []    # 存放修改的块
+        self.m_LastModLine = -1
+        self.m_bDragIn = False
+        self.m_CurFile = None
+
     def InitUI(self):
+        self.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
         self.setVerticalScrollBar(self.m_ScrollBar)
         self.setTabStopWidth(self.fontMetrics().width("_") * 4)
         self.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
         self.setReadOnly(True)
-        self.UpdateLineNumAreaWidth(0)
+        self.E_UpdateLineNumAreaWidth(0)
         self.SetShowTabAndSpaces(True)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.setAcceptDrops(True)
 
     def InitConnect(self):
-        self.blockCountChanged.connect(self.UpdateLineNumAreaWidth)
-        self.updateRequest.connect(self.UpdateLineNumArea)
+        self.blockCountChanged.connect(self.E_UpdateLineNumAreaWidth)
+        self.updateRequest.connect(self.E_UpdateLineNumArea)
+        self.cursorPositionChanged.connect(self.E_ChangedCursor)
+        self.cursorPositionChanged.connect(self.E_UpdateSelBlock)
 
     def resizeEvent(self, re):
         super(CCodeEdit, self).resizeEvent(re)
@@ -133,6 +140,11 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_LineInfo[realNum] = (showNum, lineAct.value)
         self.m_BlockBgInfo[realNum] = lineColor.value
 
+    def AddModBlock(self, realNum):
+        if(realNum != self.m_LastModLine + 1):
+            self.m_ModBlockList.append(realNum)
+        self.m_LastModLine = realNum
+
     def Load(self, text):
         self.setPlainText(text)
         self.ProcessBlkBg()
@@ -143,7 +155,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         doc = self.document()
         oCursor = QtGui.QTextCursor(doc)
         for iLine, bgColor in self.m_BlockBgInfo.items():
-            blk = doc.findBlockByLineNumber(iLine - 1)  # 下标从0开始
+            blk = doc.findBlockByLineNumber(iLine)
             oCursor.setPosition(blk.position())
             oCursor.beginEditBlock()
             oCursor.select(QtGui.QTextCursor.LineUnderCursor)
@@ -163,16 +175,53 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
             op.setFlags(op.flags() | QtGui.QTextOption.AddSpaceForLineAndParagraphSeparators)
         doc.setDefaultTextOption(op)
 
-    def UpdateLineNumAreaWidth(self, _):
+    def E_UpdateLineNumAreaWidth(self, _):
         self.setViewportMargins(self.LineNumAreaWidth() + 20, 0, 0, 0)
 
-    def UpdateLineNumArea(self, qRect, iDy):
+    def E_UpdateLineNumArea(self, qRect, iDy):
         if iDy:
             self.m_LineNumArea.scroll(0, iDy)
         else:
             self.m_LineNumArea.update(0, qRect.y(), self.m_LineNumArea.width(), qRect.height())
         if qRect.contains(self.viewport().rect()):
-            self.UpdateLineNumAreaWidth(0)
+            self.E_UpdateLineNumAreaWidth(0)
+
+    def E_ChangedCursor(self):
+        extSelections = []
+
+        # 高亮当前行
+        lineSelection = QtWidgets.QTextEdit.ExtraSelection()
+        # lineColor = QtGui.QColor(QtCore.Qt.gray).lighter(160)
+        lineColor = QtGui.QColor(QtCore.Qt.green).lighter(160)
+        lineSelection.format.setBackground(lineColor)
+        lineSelection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
+        lineSelection.cursor = self.textCursor()
+        extSelections.append(lineSelection)
+
+        # 高亮所有选中的单词
+        lstCurWordCursor = []
+        oTxtCursor = self.textCursor()
+        sCurWord = str(oTxtCursor.selectedText())
+        if not sCurWord:
+            self.setExtraSelections(extSelections)
+            return
+        iFindOpt = QtGui.QTextDocument.FindCaseSensitively | QtGui.QTextDocument.FindWholeWords
+        oTargetCursor = self.document().find(sCurWord, 0, iFindOpt)
+        while not oTargetCursor.isNull():
+            lstCurWordCursor.append(oTargetCursor)
+            oTargetCursor = self.document().find(sCurWord, oTargetCursor, iFindOpt)
+        for oCursor in lstCurWordCursor:
+            wordSelection = QtWidgets.QTextEdit.ExtraSelection()
+            wordSelection.format.setBackground(define.LINECOLOR.WORDSELECT.value)
+            wordSelection.cursor = oCursor
+            extSelections.append(wordSelection)
+        self.m_ScrollBar.SetBlockBgInfo(self.m_BlockBgInfo)
+        self.setExtraSelections(extSelections)
+        # TODO:scrollbar颜色跟着改变
+
+    def E_UpdateSelBlock(self):
+        iBlock = self.textCursor().blockNumber()
+        self.m_BindEditor().MoveCursorToBlock(iBlock)
 
     def LineNumAreaWidth(self):
         """获取宽度"""
@@ -198,10 +247,9 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         iDrawWidth = self.m_LineNumArea.width() - iFontWidth * 3
         while(qBlock.isValid() and iTop <= pe.rect().bottom()):
             if qBlock.isVisible() and iBottom >= pe.rect().top():
-                sNum = str(iBlockNum + 1)   # 真实的行号
-                sTextNum, sPngAct = self.m_LineInfo.get(iBlockNum + 1, (sNum, None))
+                sTextNum, sPngAct = self.m_LineInfo.get(iBlockNum, (iBlockNum, None))
                 qPainter.setPen(QtCore.Qt.black)
-                qPainter.drawText(0, iTop, iDrawWidth, iFontHeight, QtCore.Qt.AlignCenter, sTextNum)
+                qPainter.drawText(0, iTop, iDrawWidth, iFontHeight, QtCore.Qt.AlignCenter, str(sTextNum))
                 if sPngAct:
                     oPngAct = GetLinePixMap(sPngAct)
                     oPngAct = oPngAct.scaled(iFontHeight, iFontHeight)
@@ -276,3 +324,50 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
                     ffp.write(frams)
         labelText = os.path.basename(self.m_CurFile) + "(%s-%s)" % (self.m_MinFrame, self.m_MaxFrame)
         self.m_BindLabel().setText(labelText)
+
+    def JumpToPreviousMod(self):
+        """跳转到上一个修改的地方"""
+        self.JumpToMod(False)
+
+    def JumpToNextMod(self):
+        """跳转到上一个修改的地方"""
+        self.JumpToMod(True)
+
+    def JumpToMod(self, bNext=True):
+        iCurBlock = self.textCursor().blockNumber()
+        iNextIndex = self.BinarySearch(iCurBlock)
+        if not bNext:   # 向上
+            if iCurBlock in self.m_ModBlockList:
+                iNextIndex -= 2
+            else:
+                iNextIndex -= 1
+        iNextIndex = (iNextIndex + len(self.m_ModBlockList)) % len(self.m_ModBlockList)
+        iNextBlock = self.m_ModBlockList[iNextIndex]
+        self.MoveCursorToBlock(iNextBlock)
+        self.centerCursor()
+        self.m_BindEditor().centerCursor()
+
+    def BinarySearch(self, iBlock):
+        """列表中用二分查找一个大于iBlock的下标"""
+        l = 0
+        r = len(self.m_ModBlockList)
+        while l <= r:
+            m = (l + r) // 2
+            v = self.m_ModBlockList[m]
+            if (iBlock > v):
+                l = m + 1
+            elif (iBlock < v):
+                r = m - 1
+            else:
+                return m + 1
+        return l
+
+    def MoveCursorToBlock(self, iBlock):
+        tc = self.textCursor()
+        iCurBlock = tc.blockNumber()
+        iOffset = abs(iCurBlock - iBlock)
+        if iCurBlock > iBlock:
+            tc.movePosition(QtGui.QTextCursor.Up, n=iOffset)
+        else:
+            tc.movePosition(QtGui.QTextCursor.Down, n=iOffset)
+        self.setTextCursor(tc)
