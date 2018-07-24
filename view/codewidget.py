@@ -76,6 +76,8 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_BindLabel = None
         self.m_LineNumArea = CLineNumArea(self)
         self.m_ScrollBar = CScrollBar(self)
+        self.m_bDragIn = False
+        self.m_CurFile = None
         self.Init()
         self.InitUI()
         self.InitConnect()
@@ -86,8 +88,6 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_BlockBgInfo = {}     # 真实行号:每行的颜色   下标从0开始
         self.m_ModBlockList = []    # 存放修改的块
         self.m_LastModLine = -1
-        self.m_bDragIn = False
-        self.m_CurFile = None
         self.m_HasLoad = None
 
     def InitUI(self):
@@ -302,6 +302,11 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_bDragIn = False
         event.acceptProposedAction()
         self.m_CurFile = str(event.mimeData().text())
+        if(self.m_CurFile.startswith("file:///")):
+            self.m_CurFile = self.m_CurFile[8:]
+        if(not os.path.exists(self.m_CurFile)):
+            self.m_CurFile = ""
+            return
         self.m_BindLabel().setText(os.path.basename(self.m_CurFile))
         self.CLEAR_PLAIN_TEXT_EDIT.emit()
 
@@ -314,6 +319,8 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.JumpToMod(True)
 
     def JumpToMod(self, bNext=True):
+        if not self.m_ModBlockList:
+            return
         iCurBlock = self.textCursor().blockNumber()
         iNextIndex = self.BinarySearch(iCurBlock)
         if not bNext:   # 向上
