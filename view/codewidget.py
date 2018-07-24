@@ -76,7 +76,6 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_BindLabel = None
         self.m_LineNumArea = CLineNumArea(self)
         self.m_ScrollBar = CScrollBar(self)
-        self.m_bDragIn = False
         self.m_CurFile = None
         self.Init()
         self.InitUI()
@@ -279,12 +278,6 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
             return
         event.accept()
         event.acceptProposedAction()
-        self.m_bDragIn = True
-
-    def dragLeaveEvent(self, event):
-        """拖动离开触发"""
-        super(CCodeEdit, self).dragLeaveEvent(event)
-        self.m_bDragIn = False
 
     def dragMoveEvent(self, event):
         if not self.CanDrag(event):
@@ -299,7 +292,6 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         if not self.CanDrag(event):
             event.ignore()
             return
-        self.m_bDragIn = False
         event.acceptProposedAction()
         self.m_CurFile = str(event.mimeData().text())
         if(self.m_CurFile.startswith("file:///")):
