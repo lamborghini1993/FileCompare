@@ -224,7 +224,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "文件对比工具(帧debug)"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "本地文件对比工具"))
         self.pushButton_Up.setText(_translate("MainWindow", "上一个"))
         self.pushButton_Down.setText(_translate("MainWindow", "下一个"))
         self.pushButton_Find.setText(_translate("MainWindow", "查找"))

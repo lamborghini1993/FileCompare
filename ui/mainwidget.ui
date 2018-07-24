@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>文件对比工具(帧debug)</string>
+   <string>本地文件对比工具</string>
   </property>
   <property name="windowIcon">
    <iconset resource="png/res.qrc">
