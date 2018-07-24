@@ -16,7 +16,6 @@ class CMyTreeView(QtWidgets.QTreeView):
     def __init__(self, parent=None):
         super(CMyTreeView, self).__init__(parent)
         self.m_DragPosition = None
-        self.m_DragItem = None
 
     def SetFileSystemModel(self, obj):
         self.m_FileSystemModel = weakref.ref(obj)

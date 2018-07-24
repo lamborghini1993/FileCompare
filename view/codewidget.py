@@ -84,7 +84,6 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_MaxFrame = 0
         self.m_LineNumArea = CLineNumArea(self)
         self.m_ScrollBar = CScrollBar(self)
-        self.m_bDragIn = False
         self.m_CurFile = None
         self.Init()
         self.InitUI()
@@ -286,14 +285,9 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
             return
         event.accept()
         event.acceptProposedAction()
-        self.m_bDragIn = True
-
-    def dragLeaveEvent(self, event):
-        """拖动离开触发"""
-        super(CCodeEdit, self).dragLeaveEvent(event)
-        self.m_bDragIn = False
 
     def dragMoveEvent(self, event):
+        """拖拽移动中"""
         if not self.CanDrag(event):
             event.ignore()
             return
@@ -306,7 +300,6 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         if not self.CanDrag(event):
             event.ignore()
             return
-        self.m_bDragIn = False
         event.acceptProposedAction()
         self.m_CurFile = str(event.mimeData().text())
         if(self.m_CurFile.startswith("file:///")):
@@ -366,7 +359,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
     def BinarySearch(self, iBlock):
         """列表中用二分查找一个大于iBlock的下标"""
         l = 0
-        r = len(self.m_ModBlockList)
+        r = len(self.m_ModBlockList) - 1
         while l <= r:
             m = (l + r) // 2
             v = self.m_ModBlockList[m]
