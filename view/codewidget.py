@@ -95,6 +95,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_BlockBgInfo = {}     # 真实行号:每行的颜色   下标从0开始
         self.m_ModBlockList = []    # 存放修改的块
         self.m_LastModLine = -1
+        self.m_HasLoad = None
 
     def InitUI(self):
         self.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
@@ -146,6 +147,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_LastModLine = realNum
 
     def Load(self, text):
+        self.m_HasLoad = True
         self.setPlainText(text)
         self.ProcessBlkBg()
         self.m_ScrollBar.SetBlockBgInfo(self.m_BlockBgInfo)
@@ -240,6 +242,8 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
 
     def LineNumAreaPaintEvent(self, pe):
         """更新行号的显示，处理空白行号"""
+        if not self.m_HasLoad:
+            return
         qPainter = QtGui.QPainter(self.m_LineNumArea)
         qPainter.fillRect(pe.rect(), QtCore.Qt.darkGray)
         qBlock = self.firstVisibleBlock()
