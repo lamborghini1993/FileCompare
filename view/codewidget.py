@@ -329,7 +329,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
     def BinarySearch(self, iBlock):
         """列表中用二分查找一个大于iBlock的下标"""
         l = 0
-        r = len(self.m_ModBlockList)
+        r = len(self.m_ModBlockList) - 1
         while l <= r:
             m = (l + r) // 2
             v = self.m_ModBlockList[m]
