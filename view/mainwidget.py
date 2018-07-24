@@ -231,7 +231,7 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
             return False
         fangan = self.comboBox.currentText()
         for line in self.m_FilterInfo.get(fangan, ""):
-            if sInfo.find(line) != -1:
+            if re.search(line, sInfo):
                 return True
         return False
 
