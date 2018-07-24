@@ -84,6 +84,8 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_MaxFrame = 0
         self.m_LineNumArea = CLineNumArea(self)
         self.m_ScrollBar = CScrollBar(self)
+        self.m_bDragIn = False
+        self.m_CurFile = None
         self.Init()
         self.InitUI()
         self.InitConnect()
@@ -93,8 +95,6 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_BlockBgInfo = {}     # 真实行号:每行的颜色   下标从0开始
         self.m_ModBlockList = []    # 存放修改的块
         self.m_LastModLine = -1
-        self.m_bDragIn = False
-        self.m_CurFile = None
 
     def InitUI(self):
         self.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
@@ -307,6 +307,9 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_CurFile = str(event.mimeData().text())
         if(self.m_CurFile.startswith("file:///")):
             self.m_CurFile = self.m_CurFile[8:]
+        if(not os.path.exists(self.m_CurFile)):
+            self.m_CurFile = ""
+            return
         self.m_MaxFrame = 0
         self.m_MinFrame = MAX_NUM
         self.SplitFileByFrame()
@@ -341,6 +344,8 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.JumpToMod(True)
 
     def JumpToMod(self, bNext=True):
+        if not self.m_ModBlockList:
+            return
         iCurBlock = self.textCursor().blockNumber()
         iNextIndex = self.BinarySearch(iCurBlock)
         if not bNext:   # 向上
