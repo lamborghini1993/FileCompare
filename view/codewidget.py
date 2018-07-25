@@ -11,6 +11,7 @@ import os
 import define
 
 from PyQt5 import QtWidgets, QtCore, QtGui
+from . import findwidget
 
 
 def GetLinePixMap(png):
@@ -76,6 +77,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_BindLabel = None
         self.m_LineNumArea = CLineNumArea(self)
         self.m_ScrollBar = CScrollBar(self)
+        self.m_FindWidget = findwidget.CFindWidget(self)
         self.m_CurFile = None
         self.Init()
         self.InitUI()
@@ -111,6 +113,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         qRect = self.contentsRect()
         cr1 = QtCore.QRect(qRect.left(), qRect.top(), self.LineNumAreaWidth(), qRect.height())
         self.m_LineNumArea.setGeometry(cr1)
+        self.FindWidgetMoveRight()
 
     def BindBroEditor(self, oEditor):
         if self.m_BindEditor:
@@ -270,6 +273,18 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         #     return True
         # return False
 
+    def keyPressEvent(self, event):
+        if(event.modifiers() == QtCore.Qt.ControlModifier):
+            if(event.key() in (QtCore.Qt.Key_Up, QtCore.Qt.Key_E)):
+                self.JumpToPreviousMod()
+            if(event.key() in (QtCore.Qt.Key_Down, QtCore.Qt.Key_D)):
+                self.JumpToNextMod()
+            if(event.key() == QtCore.Qt.Key_F):
+                self.m_FindWidget.Open()
+        if(event.key() == QtCore.Qt.Key_Escape):
+            self.m_FindWidget.hide()
+        self.m_FindWidget.keyPressEvent(event)
+
     def dragEnterEvent(self, event):
         """拖动操作进入本窗口"""
         super(CCodeEdit, self).dragEnterEvent(event)
@@ -350,3 +365,14 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         else:
             tc.movePosition(QtGui.QTextCursor.Down, n=iOffset)
         self.setTextCursor(tc)
+
+    def FindWidgetMoveRight(self):
+        """查找窗口移动到右侧靠边"""
+        iOffset = 0
+        oScroll = self.verticalScrollBar()
+        if oScroll.isVisible():
+            iOffset = -18
+        pw = self.width() - self.m_FindWidget.width() + iOffset
+        if(pw < 0):
+            pw = 0
+        self.m_FindWidget.move(pw, 0)
