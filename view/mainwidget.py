@@ -55,6 +55,7 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         self.plainTextEdit_right.CLEAR_PLAIN_TEXT_EDIT.connect(self.E_ClearPlainTextEdit)
         self.pushButton_Down.clicked.connect(self.plainTextEdit_left.JumpToNextMod)
         self.pushButton_Up.clicked.connect(self.plainTextEdit_left.JumpToPreviousMod)
+        self.pushButton_Find.clicked.connect(self.plainTextEdit_left.m_FindWidget.Open)
 
     def Load(self):
         self.m_Info = misc.JsonLoad(self.m_JsonFile, {})
