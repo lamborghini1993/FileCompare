@@ -276,9 +276,13 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "文件对比工具(帧debug)"))
+        self.pushButton_Up.setToolTip(_translate("MainWindow", "上一个处不同(Ctrl+Up Ctrl+E)"))
         self.pushButton_Up.setText(_translate("MainWindow", "上一个"))
+        self.pushButton_Down.setToolTip(_translate("MainWindow", "下一处不同(Ctrl+Down Ctrl+D)"))
         self.pushButton_Down.setText(_translate("MainWindow", "下一个"))
+        self.pushButton_Find.setToolTip(_translate("MainWindow", "查找(Ctrl+F)"))
         self.pushButton_Find.setText(_translate("MainWindow", "查找"))
+        self.pushButton_Jump.setToolTip(_translate("MainWindow", "待实现"))
         self.pushButton_Jump.setText(_translate("MainWindow", "跳转"))
         self.pushButton_ChooseDir.setText(_translate("MainWindow", "选择文件夹"))
         self.label.setText(_translate("MainWindow", "起始帧:"))

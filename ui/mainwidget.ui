@@ -49,6 +49,9 @@
           <bold>true</bold>
          </font>
         </property>
+        <property name="toolTip">
+         <string>上一个处不同(Ctrl+Up Ctrl+E)</string>
+        </property>
         <property name="autoFillBackground">
          <bool>false</bool>
         </property>
@@ -82,6 +85,9 @@
           <bold>true</bold>
          </font>
         </property>
+        <property name="toolTip">
+         <string>下一处不同(Ctrl+Down Ctrl+D)</string>
+        </property>
         <property name="text">
          <string>下一个</string>
         </property>
@@ -112,6 +118,9 @@
           <bold>true</bold>
          </font>
         </property>
+        <property name="toolTip">
+         <string>查找(Ctrl+F)</string>
+        </property>
         <property name="text">
          <string>查找</string>
         </property>
@@ -141,6 +150,9 @@
           <weight>75</weight>
           <bold>true</bold>
          </font>
+        </property>
+        <property name="toolTip">
+         <string>待实现</string>
         </property>
         <property name="text">
          <string>跳转</string>
