@@ -11,6 +11,7 @@ from PyQt5 import QtCore, QtGui
 
 CACHE_DIR = os.path.join(os.getcwd(), "Cache")
 
+
 class MODIFICATION(enum.Enum):
     ADD = 1
     DELETE = 2
@@ -35,3 +36,9 @@ class LINEACT(enum.Enum):
     MODIFY = "modify"
     FILTER = "filter"
     NONE = None
+
+
+class FOLDSTATUS(enum.Enum):
+    UNFOLD = "unflod"
+    FOLD = "flod"
+    NOTHING = "nothing"

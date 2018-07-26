@@ -10,5 +10,8 @@
         <file>del.png</file>
         <file>filter.png</file>
         <file>main.ico</file>
+        <file>unflod.png</file>
+        <file>flod.png</file>
+        <file>nothing.png</file>
     </qresource>
 </RCC>

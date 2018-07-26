@@ -221,9 +221,21 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
                 self.plainTextEdit_right.AddModBlock(iRealNum)
             self.plainTextEdit_left.AddLineInfo(iRealNum, dInfo.get("lNum", ""), lColor, lAct)
             self.plainTextEdit_right.AddLineInfo(iRealNum, dInfo.get("rNum", ""), rColor, rAct)
+            self.plainTextEdit_left.AddSpaceNum(iRealNum, self._FindSpaceNum(sLeft))
+            self.plainTextEdit_right.AddSpaceNum(iRealNum, self._FindSpaceNum(sRight))
 
         self.plainTextEdit_left.Load(sLeftContent)
         self.plainTextEdit_right.Load(sRightContent)
+
+    def _FindSpaceNum(self, line):
+        """查找有几个空格，折叠使用"""
+        iNum = 0
+        for char in line:
+            if ord(char) == 32:  # 空格
+                iNum += 1
+            else:
+                return iNum
+        return -1   # 全都是空格
 
     def _IsModify(self, act):
         if act in (define.LINEACT.LEFTADD, define.LINEACT.RIGHTADD, define.LINEACT.MODIFY):
