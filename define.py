@@ -10,6 +10,7 @@ import os
 from PyQt5 import QtCore, QtGui
 
 
+
 class MODIFICATION(enum.Enum):
     ADD = 1
     DELETE = 2
@@ -34,3 +35,9 @@ class LINEACT(enum.Enum):
     MODIFY = "modify"
     FILTER = "filter"
     NONE = None
+
+
+class FOLDSTATUS(enum.Enum):
+    UNFOLD = "unflod"
+    FOLD = "flod"
+    NOTHING = "nothing"

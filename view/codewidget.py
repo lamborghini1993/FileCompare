@@ -12,6 +12,7 @@ import define
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from . import findwidget
+from lib import misc
 
 
 def GetLinePixMap(png):
@@ -79,6 +80,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_ScrollBar = CScrollBar(self)
         self.m_FindWidget = findwidget.CFindWidget(self)
         self.m_CurFile = None
+        self.m_Stack = misc.CStack()
         self.Init()
         self.InitUI()
         self.InitConnect()
@@ -90,6 +92,10 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_ModBlockList = []    # 存放修改的块
         self.m_LastModLine = -1
         self.m_HasLoad = None
+        self.m_Stack.clear()
+        self.m_FoldStatus = {}  # 真实行:折叠图标
+        self.m_FoldBlock = {}   # A行:B行 A行到B行是一个块
+        self.m_SpaceNum = {}    # A行:空格数量
 
     def InitUI(self):
         self.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
@@ -131,21 +137,64 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
     def OnHScrollBarValChanged(self, iVal):
         self.m_BindEditor().horizontalScrollBar().setValue(iVal)
 
-    def AddLineInfo(self, realNum, showNum, lineColor, lineAct):
+    def AddLineInfo(self, iLineNum, showNum, lineColor, lineAct):
         showNum = str(showNum)
-        self.m_LineInfo[realNum] = (showNum, lineAct.value)
-        self.m_BlockBgInfo[realNum] = lineColor.value
+        self.m_LineInfo[iLineNum] = (showNum, lineAct.value)
+        self.m_BlockBgInfo[iLineNum] = lineColor.value
 
-    def AddModBlock(self, realNum):
-        if(realNum != self.m_LastModLine + 1):
-            self.m_ModBlockList.append(realNum)
-        self.m_LastModLine = realNum
+    def AddModBlock(self, iLineNum):
+        if(iLineNum != self.m_LastModLine + 1):
+            self.m_ModBlockList.append(iLineNum)
+        self.m_LastModLine = iLineNum
+
+    def AddSpaceNum(self, iLineNum, iSpaceNum):
+        """添加真实行对应空格个数，折叠使用"""
+        self.m_SpaceNum[iLineNum] = iSpaceNum
+        # if self.m_Stack.is_empty():
+        #     self.m_Stack.push(iLineNum)
+        #     self.m_FoldStatus[iLineNum] = define.FOLDSTATUS.UNFOLD
+        #     self.m_SpaceNum[iLineNum] = iSpaceNum
+        #     return
+        # if iSpaceNum == -1:
+        #     return
+        # iLastLineNum = self.m_Stack.peek()
+        # iLastSpaceNum = self.m_SpaceNum[iLastLineNum]   # 上一个不同行的空格数量
+        # if iSpaceNum > iLastSpaceNum:   # 新行空格更多
+        #     self.m_Stack.push(iLineNum)
+        #     self.m_FoldStatus[iLineNum] = define.FOLDSTATUS.UNFOLD
+        #     self.m_SpaceNum[iLineNum] = iSpaceNum
+        #     return
+        # if iSpaceNum == iLastSpaceNum:
+        #     return
+        # for _ in range(100):    # 防止死循环
+        #     if self.m_Stack.is_empty():  # 为空
+        #         self.m_Stack.push(iLineNum)
+        #         self.m_FoldStatus[iLineNum] = define.FOLDSTATUS.UNFOLD
+        #         self.m_SpaceNum[iLineNum] = iSpaceNum
+        #         return
+        #     iLastLineNum = self.m_Stack.peek()
+        #     iLastSpaceNum = self.m_SpaceNum[iLastLineNum]
+        #     if iSpaceNum > iLastSpaceNum:
+        #         return
+        #     self.m_Stack.pop()
+        #     iFoldLine = iLineNum - iLastLineNum
+        #     if iFoldLine == 1:
+        #         self.m_FoldStatus[iLastLineNum] = define.FOLDSTATUS.NOTHING  # 一行不需要折叠
+        #     else:
+        #         self.m_FoldBlock[iLastLineNum] = iFoldLine
 
     def Load(self, text):
         self.m_HasLoad = True
         self.setPlainText(text)
         self.ProcessBlkBg()
         self.m_ScrollBar.SetBlockBgInfo(self.m_BlockBgInfo)
+        self._CalculationFold()
+
+    def FoldCode(self):
+        block = self.document().begin()
+        for x in range(5):
+            block.setVisible(False)
+            block = block.next()
 
     def ProcessBlkBg(self):
         """设置每个行块的背景"""
@@ -226,13 +275,14 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_BindEditor().MoveCursorToBlock(iBlock)
 
     def LineNumAreaWidth(self):
-        """获取宽度"""
+        """获取左边栏的宽度"""
         iDigits = 0
         iMax = max(1, self.blockCount())
         while iMax:
             iMax //= 10
             iDigits += 1
-        iWidth = self.fontMetrics().width("9") * (iDigits + 3)
+        # 数字宽度 + 两张图片的宽度 TODO
+        iWidth = self.fontMetrics().width("9") * (iDigits + 10) + self.fontMetrics().height() * 2
         return iWidth
 
     def LineNumAreaPaintEvent(self, pe):
@@ -247,17 +297,24 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         iTop = int(qRectF.translated(self.contentOffset()).top())
         iBottom = iTop + int(qRectF.height())
         iFontHeight = self.fontMetrics().height()
-        iFontWidth = self.fontMetrics().width("9")
-        iDrawWidth = self.m_LineNumArea.width() - iFontWidth * 3
+        iDrawWidth = self.m_LineNumArea.width() - iFontHeight * 2
         while(qBlock.isValid() and iTop <= pe.rect().bottom()):
             if qBlock.isVisible() and iBottom >= pe.rect().top():
                 sTextNum, sPngAct = self.m_LineInfo.get(iBlockNum, (iBlockNum, None))
                 qPainter.setPen(QtCore.Qt.black)
+                sTextNum = str(iBlockNum)  # TODO
+                if iBlockNum in self.m_FoldBlock:
+                    sTextNum = "%s-%s" % (sTextNum, self.m_FoldBlock[iBlockNum])
                 qPainter.drawText(0, iTop, iDrawWidth, iFontHeight, QtCore.Qt.AlignCenter, str(sTextNum))
                 if sPngAct:
                     oPngAct = GetLinePixMap(sPngAct)
                     oPngAct = oPngAct.scaled(iFontHeight, iFontHeight)
                     qPainter.drawPixmap(iDrawWidth, iTop, iFontHeight, iFontHeight, oPngAct)
+                oFoldStatu = self.m_FoldStatus.get(iBlockNum, define.FOLDSTATUS.NOTHING)
+                oPngFold = GetLinePixMap(oFoldStatu.value)
+                oPngFold = oPngFold.scaled(iFontHeight, iFontHeight)
+                qPainter.drawPixmap(iDrawWidth + iFontHeight, iTop, iFontHeight, iFontHeight, oPngFold)
+
             qBlock = qBlock.next()
             iTop = iBottom
             iBottom = iTop + int(self.blockBoundingRect(qBlock).height())
@@ -376,3 +433,34 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         if(pw < 0):
             pw = 0
         self.m_FindWidget.move(pw, 0)
+
+    def _CalculationFold(self):
+        iLastSpaceNum = 0   # 当前空格数
+        iLastLine = 0   # 记录上一次的行
+        for i in range(len(self.m_SpaceNum)):
+            iSpaceNum = self.m_SpaceNum[i]
+            if iSpaceNum == -1:
+                continue
+            if iSpaceNum == iLastSpaceNum:
+                iLastLine = i
+                continue
+
+            if iSpaceNum > iLastSpaceNum:   # 当有不同空格行出现，push上一次记录的行
+                self.m_FoldStatus[iLastLine] = define.FOLDSTATUS.UNFOLD
+                self.m_Stack.push(iLastLine)
+                iLastLine = i
+                iLastSpaceNum = iSpaceNum
+                continue
+
+            while(True):
+                if(self.m_Stack.is_empty()):
+                    break
+                iLastLineNum = self.m_Stack.peek()
+                iLastSpaceNum = self.m_SpaceNum[iLastLineNum]
+                if(iLastSpaceNum >= iSpaceNum):
+                    self.m_Stack.pop()
+                    self.m_FoldBlock[iLastLineNum] = i - 1
+                else:
+                    break
+            iLastSpaceNum = iSpaceNum
+            iLastLine = i
