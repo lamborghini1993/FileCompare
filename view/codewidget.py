@@ -68,6 +68,9 @@ class CLineNumArea(QtWidgets.QWidget):
         super(CLineNumArea, self).paintEvent(pe)
         self.m_Parent().LineNumAreaPaintEvent(pe)
 
+    def mousePressEvent(self, event):
+        self.m_Parent().LineAreaPress(event.pos())
+
 
 class CCodeEdit(QtWidgets.QPlainTextEdit):
     CLEAR_PLAIN_TEXT_EDIT = QtCore.pyqtSignal()
@@ -98,7 +101,6 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.m_SpaceNum = {}    # A行:空格数量
 
     def InitUI(self):
-        self.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
         self.setVerticalScrollBar(self.m_ScrollBar)
         self.setTabStopWidth(self.fontMetrics().width("_") * 4)
         self.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
@@ -114,12 +116,65 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.cursorPositionChanged.connect(self.E_ChangedCursor)
         self.cursorPositionChanged.connect(self.E_UpdateSelBlock)
 
+    # ------------------begin:重写的方法------------------
     def resizeEvent(self, re):
         super(CCodeEdit, self).resizeEvent(re)
         qRect = self.contentsRect()
         cr1 = QtCore.QRect(qRect.left(), qRect.top(), self.LineNumAreaWidth(), qRect.height())
         self.m_LineNumArea.setGeometry(cr1)
         self.FindWidgetMoveRight()
+
+    def keyPressEvent(self, event):
+        if(event.modifiers() == QtCore.Qt.ControlModifier):
+            if(event.key() in (QtCore.Qt.Key_Up, QtCore.Qt.Key_E)):
+                self.JumpToPreviousMod()
+            if(event.key() in (QtCore.Qt.Key_Down, QtCore.Qt.Key_D)):
+                self.JumpToNextMod()
+            if(event.key() == QtCore.Qt.Key_F):
+                self.m_FindWidget.Open()
+        if(event.key() == QtCore.Qt.Key_Escape):
+            self.m_FindWidget.hide()
+        self.m_FindWidget.keyPressEvent(event)
+
+    def dragEnterEvent(self, event):
+        """拖动操作进入本窗口"""
+        super(CCodeEdit, self).dragEnterEvent(event)
+        if not self.CanDrag(event):
+            event.ignore()
+            return
+        event.accept()
+        event.acceptProposedAction()
+
+    def dragMoveEvent(self, event):
+        """拖拽移动中"""
+        if not self.CanDrag(event):
+            event.ignore()
+            return
+        event.accept()
+        event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        """放开了鼠标完成drop操作"""
+        super(CCodeEdit, self).dropEvent(event)
+        if not self.CanDrag(event):
+            event.ignore()
+            return
+        event.acceptProposedAction()
+        self.m_CurFile = str(event.mimeData().text())
+        if(self.m_CurFile.startswith("file:///")):
+            self.m_CurFile = self.m_CurFile[8:]
+        if(not os.path.exists(self.m_CurFile)):
+            self.m_CurFile = ""
+            return
+        self.m_MaxFrame = 0
+        self.m_MinFrame = MAX_NUM
+        self.SplitFileByFrame()
+        self.CLEAR_PLAIN_TEXT_EDIT.emit()
+
+    def scrollContentsBy(self, dx, dy):
+        self.viewport().update()
+        super(CCodeEdit, self).scrollContentsBy(dx, dy)
+    # ------------------end:重写的方法------------------
 
     def BindBroEditor(self, oEditor):
         if self.m_BindEditor:
@@ -150,38 +205,6 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
     def AddSpaceNum(self, iLineNum, iSpaceNum):
         """添加真实行对应空格个数，折叠使用"""
         self.m_SpaceNum[iLineNum] = iSpaceNum
-        # if self.m_Stack.is_empty():
-        #     self.m_Stack.push(iLineNum)
-        #     self.m_FoldStatus[iLineNum] = define.FOLDSTATUS.UNFOLD
-        #     self.m_SpaceNum[iLineNum] = iSpaceNum
-        #     return
-        # if iSpaceNum == -1:
-        #     return
-        # iLastLineNum = self.m_Stack.peek()
-        # iLastSpaceNum = self.m_SpaceNum[iLastLineNum]   # 上一个不同行的空格数量
-        # if iSpaceNum > iLastSpaceNum:   # 新行空格更多
-        #     self.m_Stack.push(iLineNum)
-        #     self.m_FoldStatus[iLineNum] = define.FOLDSTATUS.UNFOLD
-        #     self.m_SpaceNum[iLineNum] = iSpaceNum
-        #     return
-        # if iSpaceNum == iLastSpaceNum:
-        #     return
-        # for _ in range(100):    # 防止死循环
-        #     if self.m_Stack.is_empty():  # 为空
-        #         self.m_Stack.push(iLineNum)
-        #         self.m_FoldStatus[iLineNum] = define.FOLDSTATUS.UNFOLD
-        #         self.m_SpaceNum[iLineNum] = iSpaceNum
-        #         return
-        #     iLastLineNum = self.m_Stack.peek()
-        #     iLastSpaceNum = self.m_SpaceNum[iLastLineNum]
-        #     if iSpaceNum > iLastSpaceNum:
-        #         return
-        #     self.m_Stack.pop()
-        #     iFoldLine = iLineNum - iLastLineNum
-        #     if iFoldLine == 1:
-        #         self.m_FoldStatus[iLastLineNum] = define.FOLDSTATUS.NOTHING  # 一行不需要折叠
-        #     else:
-        #         self.m_FoldBlock[iLastLineNum] = iFoldLine
 
     def Load(self, text):
         self.m_HasLoad = True
@@ -189,12 +212,6 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         self.ProcessBlkBg()
         self.m_ScrollBar.SetBlockBgInfo(self.m_BlockBgInfo)
         self._CalculationFold()
-
-    def FoldCode(self):
-        block = self.document().begin()
-        for x in range(5):
-            block.setVisible(False)
-            block = block.next()
 
     def ProcessBlkBg(self):
         """设置每个行块的背景"""
@@ -222,7 +239,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         doc.setDefaultTextOption(op)
 
     def E_UpdateLineNumAreaWidth(self, _):
-        self.setViewportMargins(self.LineNumAreaWidth() + 20, 0, 0, 0)
+        self.setViewportMargins(self.LineNumAreaWidth() + 2, 0, 0, 0)
 
     def E_UpdateLineNumArea(self, qRect, iDy):
         if iDy:
@@ -281,8 +298,8 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         while iMax:
             iMax //= 10
             iDigits += 1
-        # 数字宽度 + 两张图片的宽度 TODO
-        iWidth = self.fontMetrics().width("9") * (iDigits + 10) + self.fontMetrics().height() * 2
+        # 数字宽度 + 两张图片的宽度
+        iWidth = self.fontMetrics().width("9") * iDigits + self.fontMetrics().height() * 2
         return iWidth
 
     def LineNumAreaPaintEvent(self, pe):
@@ -302,9 +319,6 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
             if qBlock.isVisible() and iBottom >= pe.rect().top():
                 sTextNum, sPngAct = self.m_LineInfo.get(iBlockNum, (iBlockNum, None))
                 qPainter.setPen(QtCore.Qt.black)
-                sTextNum = str(iBlockNum)  # TODO
-                if iBlockNum in self.m_FoldBlock:
-                    sTextNum = "%s-%s" % (sTextNum, self.m_FoldBlock[iBlockNum])
                 qPainter.drawText(0, iTop, iDrawWidth, iFontHeight, QtCore.Qt.AlignCenter, str(sTextNum))
                 if sPngAct:
                     oPngAct = GetLinePixMap(sPngAct)
@@ -329,50 +343,6 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         # if data.startswith("open "):
         #     return True
         # return False
-
-    def keyPressEvent(self, event):
-        if(event.modifiers() == QtCore.Qt.ControlModifier):
-            if(event.key() in (QtCore.Qt.Key_Up, QtCore.Qt.Key_E)):
-                self.JumpToPreviousMod()
-            if(event.key() in (QtCore.Qt.Key_Down, QtCore.Qt.Key_D)):
-                self.JumpToNextMod()
-            if(event.key() == QtCore.Qt.Key_F):
-                self.m_FindWidget.Open()
-        if(event.key() == QtCore.Qt.Key_Escape):
-            self.m_FindWidget.hide()
-        self.m_FindWidget.keyPressEvent(event)
-
-    def dragEnterEvent(self, event):
-        """拖动操作进入本窗口"""
-        super(CCodeEdit, self).dragEnterEvent(event)
-        if not self.CanDrag(event):
-            event.ignore()
-            return
-        event.accept()
-        event.acceptProposedAction()
-
-    def dragMoveEvent(self, event):
-        if not self.CanDrag(event):
-            event.ignore()
-            return
-        event.accept()
-        event.acceptProposedAction()
-
-    def dropEvent(self, event):
-        """放开了鼠标完成drop操作"""
-        super(CCodeEdit, self).dropEvent(event)
-        if not self.CanDrag(event):
-            event.ignore()
-            return
-        event.acceptProposedAction()
-        self.m_CurFile = str(event.mimeData().text())
-        if(self.m_CurFile.startswith("file:///")):
-            self.m_CurFile = self.m_CurFile[8:]
-        if(not os.path.exists(self.m_CurFile)):
-            self.m_CurFile = ""
-            return
-        self.m_BindLabel().setText(os.path.basename(self.m_CurFile))
-        self.CLEAR_PLAIN_TEXT_EDIT.emit()
 
     def JumpToPreviousMod(self):
         """跳转到上一个修改的地方"""
@@ -464,3 +434,48 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
                     break
             iLastSpaceNum = iSpaceNum
             iLastLine = i
+
+    def LineAreaPress(self, point):
+        document = self.document()
+        qBlock = self.firstVisibleBlock()
+        iLineNum = qBlock.firstLineNumber()
+        iFontHeight = self.fontMetrics().height()
+        iClickLineNum = point.y()//iFontHeight + iLineNum
+        oClickBlock = document.findBlockByLineNumber(iClickLineNum)
+        iBlockNum = oClickBlock.blockNumber()
+        oStatue = self.m_FoldStatus.get(iBlockNum, 0)
+        if not oStatue:
+            return
+        iEndBlockNum = self.m_FoldBlock[iBlockNum]
+        if oStatue == define.FOLDSTATUS.UNFOLD:
+            self._Fold(iBlockNum, iEndBlockNum)
+            self.m_BindEditor()._Fold(iBlockNum, iEndBlockNum)
+        elif oStatue == define.FOLDSTATUS.FOLD:
+            self._UnFold(iBlockNum, iEndBlockNum)
+            self.m_BindEditor()._UnFold(iBlockNum, iEndBlockNum)
+
+    def _Fold(self, iBlockNum, iEndBlockNum):
+        """折叠操作"""
+        oStatue = self.m_FoldStatus.get(iBlockNum, 0)
+        if oStatue == define.FOLDSTATUS.UNFOLD:
+            self.m_FoldStatus[iBlockNum] = define.FOLDSTATUS.FOLD
+        self._DoFold(iBlockNum, iEndBlockNum, False)
+
+    def _UnFold(self, iBlockNum, iEndBlockNum):
+        """展开操作"""
+        # 展开时将子节点折叠的全展开
+        for x in range(iBlockNum, iEndBlockNum + 1):
+            oStatue = self.m_FoldStatus.get(x, 0)
+            if oStatue == define.FOLDSTATUS.FOLD:
+                self.m_FoldStatus[x] = define.FOLDSTATUS.UNFOLD
+        self._DoFold(iBlockNum, iEndBlockNum, True)
+
+    def _DoFold(self, iBlockNum, iEndBlockNum, bVisible):
+        """进行展开折叠操作"""
+        document = self.document()
+        for x in range(iBlockNum + 1, iEndBlockNum + 1):
+            oTextBlock = document.findBlockByNumber(x)
+            oTextBlock.setVisible(bVisible)
+        self.viewport().update()
+        document.adjustSize()
+        self.update()
