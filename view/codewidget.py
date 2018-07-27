@@ -166,9 +166,7 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
         if(not os.path.exists(self.m_CurFile)):
             self.m_CurFile = ""
             return
-        self.m_MaxFrame = 0
-        self.m_MinFrame = MAX_NUM
-        self.SplitFileByFrame()
+        self.m_BindLabel().setText(os.path.basename(self.m_CurFile))
         self.CLEAR_PLAIN_TEXT_EDIT.emit()
 
     def scrollContentsBy(self, dx, dy):
