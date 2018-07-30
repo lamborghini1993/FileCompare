@@ -9,6 +9,7 @@ import os
 
 from PyQt5 import QtCore, QtGui
 
+LOG_FILE = os.path.join(os.getcwd(), "debug.log")
 
 
 class MODIFICATION(enum.Enum):
