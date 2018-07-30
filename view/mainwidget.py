@@ -55,6 +55,7 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         self.pushButton_Down.clicked.connect(self.plainTextEdit_left.JumpToNextMod)
         self.pushButton_Up.clicked.connect(self.plainTextEdit_left.JumpToPreviousMod)
         self.pushButton_Find.clicked.connect(self.plainTextEdit_left.m_FindWidget.Open)
+        self.pushButton_Del.clicked.connect(self.E_DelFilterConfig)
 
     def Load(self):
         self.m_Info = misc.JsonLoad(self.m_JsonFile, {})
@@ -85,6 +86,7 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
 
     def Save(self):
         self.m_Info["dir"] = self.m_OpenDir
+        self.m_Info["filterInfo"] = self.m_FilterInfo
         misc.JsonDump(self.m_Info, self.m_JsonFile)
 
     def E_ChooseDir(self):
@@ -118,6 +120,16 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         self.CompareByStr()
         self.RefershCmp()
         self.pushButton_Down.click()  # 选择第一个不同的行
+
+
+    def E_DelFilterConfig(self):
+        """删除过滤方案"""
+        index = self.comboBox.currentIndex()
+        fangan = self.comboBox.currentText()
+        if fangan in self.m_FilterInfo:
+            del self.m_FilterInfo[fangan]
+        self.comboBox.removeItem(index)
+        self.Save()
 
     def CompareByStr(self):
         differ = difflib.Differ()
