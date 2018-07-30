@@ -5,8 +5,11 @@
 @Desc: 存放公共函数
 """
 
-import json
 import os
+import sys
+import json
+import traceback
+import logging
 
 
 def JsonDump(data, path, **myArgs):
@@ -76,3 +79,15 @@ class CStack(object):
 
     def clear(self):
         self.m_Items = []
+
+
+def PythonError():
+    """打印栈信息"""
+    msg = traceback.format_exc()
+    tb = sys.exc_info()[-1]
+    if not msg or not tb:
+        return
+    while tb.tb_next:
+        tb = tb.tb_next
+    msg += "%s\n" % tb.tb_frame.f_locals
+    logging.error(msg)

@@ -10,6 +10,7 @@ import os
 from PyQt5 import QtCore, QtGui
 
 CACHE_DIR = os.path.join(os.getcwd(), "Cache")
+LOG_FILE = os.path.join(os.getcwd(), "debug.log")
 
 
 class MODIFICATION(enum.Enum):
