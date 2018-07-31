@@ -244,6 +244,8 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         for char in line:
             if ord(char) == 32:  # 空格
                 iNum += 1
+            elif ord(char) == 9:  # tab
+                iNum += 4
             else:
                 return iNum
         return -1   # 全都是空格
