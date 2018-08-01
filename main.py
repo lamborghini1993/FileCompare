@@ -5,7 +5,6 @@ import time
 import logging
 import define
 
-# from widget import mainwidget
 from view import mainwidget
 from lib import misc
 
