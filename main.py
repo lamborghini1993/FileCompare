@@ -16,15 +16,13 @@ def MakeDir():
 
 
 def InitConfig():
-    logging.basicConfig(
-        filename=define.LOG_FILE,
-        format="[%(asctime)s] (%(levelname)s) %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.DEBUG,
-        filemode="a",
-    )
-    ch = logging.StreamHandler()
+    handler = logging.FileHandler(filename=define.LOG_FILE, mode='a', encoding="utf-8")
+    handler.setFormatter(logging.Formatter("[%(asctime)s] (%(levelname)s) %(message)s"))
     logger = logging.getLogger()
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+
+    ch = logging.StreamHandler()
     logger.addHandler(ch)
 
 
@@ -48,20 +46,16 @@ def ClearOldLog():
         of.writelines(lstNewLine)
 
 
-def Show():
-    try:
-        mainwidget.Show()
-    except:
-        misc.PythonError()
-
-
 def Start():
     MakeDir()
     InitConfig()
     ClearOldLog()
     ClearOldCache()
-    Show()
+    mainwidget.Show()
 
 
 if __name__ == "__main__":
-    Start()
+    try:
+        Start()
+    except Exception as e:
+        misc.PythonError()

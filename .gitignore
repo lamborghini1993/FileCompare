@@ -1,4 +1,5 @@
 *.pyc
+*.log
 test/
 __pycache__/
 config.json
