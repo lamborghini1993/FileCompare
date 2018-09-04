@@ -49,6 +49,8 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
     def InitConnect(self):
         self.pushButton_ChooseDir.clicked.connect(self.E_ChooseDir)
         self.pushButton_compare.clicked.connect(self.E_Compare)
+        self.previous_frame.clicked.connect(self.E_PreviousFrameCompare)
+        self.next_frame.clicked.connect(self.E_NextFrameCompare)
         self.comboBox.currentTextChanged.connect(self._LoadFilterTextEdit)
         self.comboBox.editTextChanged.connect(self._LoadFilterTextEdit)
         self.plainTextEdit_left.CLEAR_PLAIN_TEXT_EDIT.connect(self.E_ClearPlainTextEdit)
@@ -105,6 +107,16 @@ class CMainWidget(QtWidgets.QMainWindow, mainwidget_ui.Ui_MainWindow):
         self.Save()
         if(self._ValidTwoPlain()):
             self._StartCompare()
+
+    def E_PreviousFrameCompare(self):
+        self.spinBox_start.setValue(int(self.spinBox_start.text()) - 1)
+        self.spinBox_end.setValue(int(self.spinBox_end.text()) - 1)
+        self.E_Compare()
+
+    def E_NextFrameCompare(self):
+        self.spinBox_start.setValue(int(self.spinBox_start.text()) + 1)
+        self.spinBox_end.setValue(int(self.spinBox_end.text()) + 1)
+        self.E_Compare()
 
     def _StartCompare(self):
         start = int(self.spinBox_start.text())
