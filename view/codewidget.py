@@ -139,6 +139,8 @@ class CCodeEdit(QtWidgets.QPlainTextEdit):
                 self.JumpToNextMod()
             if(event.key() == QtCore.Qt.Key_F):
                 self.m_FindWidget.Open()
+            if(event.key() == QtCore.Qt.Key_C):
+                self.copy()
         if(event.key() == QtCore.Qt.Key_Escape):
             self.m_FindWidget.hide()
         self.m_FindWidget.keyPressEvent(event)
